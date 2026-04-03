@@ -12,6 +12,12 @@ step()  { echo -e "\n${CYAN}==> $1${NC}"; }
 skip()  { echo -e "    ${YELLOW}[SKIP]${NC} $1"; }
 done_() { echo -e "    ${GREEN}[DONE]${NC} $1"; }
 
+# ---- Pre-cache sudo password ----
+echo -e "${CYAN}This script needs sudo access to install packages.${NC}"
+sudo -v || { echo "sudo is required. Exiting."; exit 1; }
+# Keep sudo alive in the background
+while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null &
+
 # ---- apt update & upgrade ----
 step "Checking apt update..."
 LAST_UPDATE=$(stat -c %Y /var/lib/apt/lists/partial 2>/dev/null || echo 0)

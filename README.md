@@ -26,3 +26,8 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/se
 ### macOS
 
 > Coming soon
+
+## TODO
+
+- [ ] Setup interativo de Git e GitHub via Claude
+- [ ] Setup para macOS
