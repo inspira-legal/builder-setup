@@ -163,6 +163,32 @@ else
     skip "gcloud already installed"
 fi
 
+# Source gcloud for this session
+GCLOUD_PATH=~/google-cloud-sdk/bin/gcloud
+if [ -f "$GCLOUD_PATH" ]; then
+    source ~/google-cloud-sdk/path.bash.inc 2>/dev/null || true
+fi
+
+step "Checking gcloud auth..."
+if command -v gcloud &>/dev/null || [ -f "$GCLOUD_PATH" ]; then
+    GCLOUD_CMD=$(command -v gcloud 2>/dev/null || echo "$GCLOUD_PATH")
+    if ! $GCLOUD_CMD auth list 2>/dev/null | grep -q ACTIVE; then
+        echo "    Opening browser for Google Cloud login..."
+        $GCLOUD_CMD auth login
+        done_ "gcloud auth login"
+    else
+        skip "gcloud already authenticated"
+    fi
+
+    if [ ! -f ~/.config/gcloud/application_default_credentials.json ]; then
+        echo "    Opening browser for application default credentials..."
+        $GCLOUD_CMD auth application-default login
+        done_ "gcloud application-default auth"
+    else
+        skip "gcloud application-default credentials already set"
+    fi
+fi
+
 # ---- Claude Code ----
 step "Checking Claude Code..."
 if ! command -v claude &>/dev/null && [ ! -f ~/.claude/bin/claude ]; then
