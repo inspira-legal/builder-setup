@@ -57,12 +57,17 @@ else
     skip "Git email already set ($(git config --global user.email))"
 fi
 
-# ---- Docker ----
+# ---- Docker CE ----
 step "Checking Docker..."
 if ! command -v docker &>/dev/null; then
-    echo "    Installing Docker..."
-    sudo apt install -y docker.io docker-compose-v2
-    done_ "Docker installed"
+    echo "    Installing Docker CE..."
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /tmp/docker.asc
+    sudo cp /tmp/docker.asc /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+    sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    done_ "Docker CE installed"
 else
     skip "Docker already installed"
 fi
@@ -126,7 +131,6 @@ TOOLS_NEEDED=()
 $MISE list node   &>/dev/null || TOOLS_NEEDED+=(node@lts)
 $MISE list bun    &>/dev/null || TOOLS_NEEDED+=(bun@latest)
 $MISE list go     &>/dev/null || TOOLS_NEEDED+=(go@latest)
-$MISE list rust   &>/dev/null || TOOLS_NEEDED+=(rust@latest)
 $MISE list pnpm   &>/dev/null || TOOLS_NEEDED+=(pnpm@latest)
 $MISE list yarn   &>/dev/null || TOOLS_NEEDED+=(yarn@latest)
 
@@ -136,6 +140,16 @@ if [ ${#TOOLS_NEEDED[@]} -gt 0 ]; then
     done_ "Mise tools installed"
 else
     skip "All mise tools already installed"
+fi
+
+# ---- Rust (rustup) ----
+step "Checking Rust..."
+if ! command -v rustup &>/dev/null; then
+    echo "    Installing Rust via rustup..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    done_ "Rust installed"
+else
+    skip "Rust already installed"
 fi
 
 # ---- uv (standalone) ----
