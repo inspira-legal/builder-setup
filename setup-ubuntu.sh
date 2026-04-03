@@ -131,6 +131,7 @@ TOOLS_NEEDED=()
 $MISE list node   &>/dev/null || TOOLS_NEEDED+=(node@lts)
 $MISE list bun    &>/dev/null || TOOLS_NEEDED+=(bun@latest)
 $MISE list go     &>/dev/null || TOOLS_NEEDED+=(go@latest)
+$MISE list rust   &>/dev/null || TOOLS_NEEDED+=(rust@latest)
 $MISE list pnpm   &>/dev/null || TOOLS_NEEDED+=(pnpm@latest)
 $MISE list yarn   &>/dev/null || TOOLS_NEEDED+=(yarn@latest)
 
@@ -140,16 +141,6 @@ if [ ${#TOOLS_NEEDED[@]} -gt 0 ]; then
     done_ "Mise tools installed"
 else
     skip "All mise tools already installed"
-fi
-
-# ---- Rust (rustup) ----
-step "Checking Rust..."
-if ! command -v rustup &>/dev/null; then
-    echo "    Installing Rust via rustup..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    done_ "Rust installed"
-else
-    skip "Rust already installed"
 fi
 
 # ---- uv (standalone) ----
