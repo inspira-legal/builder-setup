@@ -65,13 +65,8 @@ fi
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  WSL setup complete!                   ${NC}"
+echo -e "${GREEN}  Restarting WSL in 3 seconds...        ${NC}"
+echo -e "${GREEN}  Open Ubuntu again after restart.      ${NC}"
 echo -e "${GREEN}========================================${NC}"
-echo ""
-read -rp "Restart WSL now to apply all changes? [Y/n] " RESTART
-RESTART=${RESTART:-Y}
-if [[ "$RESTART" =~ ^[Yy]$ ]]; then
-    echo "Restarting WSL..."
-    wsl.exe --shutdown
-else
-    echo -e "${YELLOW}Remember to restart WSL before using Docker.${NC}"
-fi
+sleep 3
+wsl.exe --shutdown

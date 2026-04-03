@@ -41,21 +41,6 @@ else
     skip "Git default branch already set"
 fi
 
-if [ -z "$(git config --global user.name 2>/dev/null)" ]; then
-    read -rp "    Git name: " GIT_NAME
-    git config --global user.name "$GIT_NAME"
-    done_ "Git name set to $GIT_NAME"
-else
-    skip "Git name already set ($(git config --global user.name))"
-fi
-
-if [ -z "$(git config --global user.email 2>/dev/null)" ]; then
-    read -rp "    Git email: " GIT_EMAIL
-    git config --global user.email "$GIT_EMAIL"
-    done_ "Git email set to $GIT_EMAIL"
-else
-    skip "Git email already set ($(git config --global user.email))"
-fi
 
 # ---- Docker CE ----
 step "Checking Docker..."
