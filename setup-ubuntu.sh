@@ -72,6 +72,13 @@ else
     skip "Docker already installed"
 fi
 
+if ! sudo systemctl is-enabled docker &>/dev/null; then
+    sudo systemctl enable --now docker
+    done_ "Docker service enabled"
+else
+    skip "Docker service already enabled"
+fi
+
 if ! groups "$USER" | grep -q '\bdocker\b'; then
     sudo usermod -aG docker "$USER"
     done_ "Added $USER to docker group"

@@ -16,6 +16,15 @@ step()  { echo -e "\n${CYAN}==> $1${NC}"; }
 skip()  { echo -e "    ${YELLOW}[SKIP]${NC} $1"; }
 done_() { echo -e "    ${GREEN}[DONE]${NC} $1"; }
 
+# ---- Enable systemd (required for Docker) ----
+step "Checking systemd in WSL..."
+if ! grep -q 'systemd=true' /etc/wsl.conf 2>/dev/null; then
+    echo -e "[boot]\nsystemd=true" | sudo tee -a /etc/wsl.conf >/dev/null
+    done_ "systemd enabled in wsl.conf (restart WSL to apply)"
+else
+    skip "systemd already enabled"
+fi
+
 # ---- VS Code as editor ----
 step "Checking editor config..."
 if ! grep -q 'export EDITOR="code --wait"' ~/.bashrc 2>/dev/null; then
