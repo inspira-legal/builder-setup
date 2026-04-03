@@ -130,7 +130,6 @@ $MISE list go     &>/dev/null || TOOLS_NEEDED+=(go@latest)
 $MISE list rust   &>/dev/null || TOOLS_NEEDED+=(rust@latest)
 $MISE list pnpm   &>/dev/null || TOOLS_NEEDED+=(pnpm@latest)
 $MISE list yarn   &>/dev/null || TOOLS_NEEDED+=(yarn@latest)
-$MISE list uv     &>/dev/null || TOOLS_NEEDED+=(uv@latest)
 
 if [ ${#TOOLS_NEEDED[@]} -gt 0 ]; then
     echo "    Installing: ${TOOLS_NEEDED[*]}"
@@ -138,6 +137,16 @@ if [ ${#TOOLS_NEEDED[@]} -gt 0 ]; then
     done_ "Mise tools installed"
 else
     skip "All mise tools already installed"
+fi
+
+# ---- uv (standalone) ----
+step "Checking uv..."
+if ! command -v uv &>/dev/null; then
+    echo "    Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    done_ "uv installed"
+else
+    skip "uv already installed"
 fi
 
 # ---- gcloud ----
