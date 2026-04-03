@@ -130,6 +130,7 @@ $MISE list go     &>/dev/null || TOOLS_NEEDED+=(go@latest)
 $MISE list rust   &>/dev/null || TOOLS_NEEDED+=(rust@latest)
 $MISE list pnpm   &>/dev/null || TOOLS_NEEDED+=(pnpm@latest)
 $MISE list yarn   &>/dev/null || TOOLS_NEEDED+=(yarn@latest)
+$MISE list uv     &>/dev/null || TOOLS_NEEDED+=(uv@latest)
 
 if [ ${#TOOLS_NEEDED[@]} -gt 0 ]; then
     echo "    Installing: ${TOOLS_NEEDED[*]}"
