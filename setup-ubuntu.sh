@@ -125,7 +125,6 @@ TOOLS_NEEDED=()
 
 $MISE list node   &>/dev/null || TOOLS_NEEDED+=(node@lts)
 $MISE list bun    &>/dev/null || TOOLS_NEEDED+=(bun@latest)
-$MISE list python &>/dev/null || TOOLS_NEEDED+=(python@latest)
 $MISE list go     &>/dev/null || TOOLS_NEEDED+=(go@latest)
 $MISE list rust   &>/dev/null || TOOLS_NEEDED+=(rust@latest)
 $MISE list pnpm   &>/dev/null || TOOLS_NEEDED+=(pnpm@latest)
