@@ -65,6 +65,13 @@ fi
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  WSL setup complete!                   ${NC}"
-echo -e "${GREEN}  Run 'source ~/.bashrc' or open a new  ${NC}"
-echo -e "${GREEN}  terminal to apply all changes.        ${NC}"
 echo -e "${GREEN}========================================${NC}"
+echo ""
+read -rp "Restart WSL now to apply all changes? [Y/n] " RESTART
+RESTART=${RESTART:-Y}
+if [[ "$RESTART" =~ ^[Yy]$ ]]; then
+    echo "Restarting WSL..."
+    wsl.exe --shutdown
+else
+    echo -e "${YELLOW}Remember to restart WSL before using Docker.${NC}"
+fi
