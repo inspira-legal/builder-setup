@@ -55,7 +55,7 @@ export const tools: Tool[] = [
     },
     darwin: async () => {
       if (!has("brew")) {
-        await $`curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | /bin/bash`;
+        await $`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
       }
     },
   },
@@ -96,7 +96,7 @@ export const tools: Tool[] = [
       await installDockerApt();
     },
     darwin: async () => {
-      await $`brew install --cask docker`;
+      await $`brew install --cask docker-desktop`;
     },
     windows: async () => {
       await $`winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements`;
@@ -108,13 +108,18 @@ export const tools: Tool[] = [
     bin: "gh",
     linux: async () => {
       await $`sudo mkdir -p -m 755 /etc/apt/keyrings`;
-      await $`curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /tmp/githubcli.gpg`;
-      await $`sudo cp /tmp/githubcli.gpg /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
+      await $`curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null`;
+      await $`sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
       const arch = (await $`dpkg --print-architecture`.text()).trim();
-      const repo = `deb [arch=${arch} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main`;
-      await Bun.write("/tmp/github-cli.list", repo + "\n");
-      await $`sudo cp /tmp/github-cli.list /etc/apt/sources.list.d/github-cli.list`;
+      const sources = `Types: deb
+URIs: https://cli.github.com/packages
+Suites: stable
+Components: main
+Architectures: ${arch}
+Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
+      await Bun.write("/tmp/github-cli.sources", sources + "\n");
+      await $`sudo cp /tmp/github-cli.sources /etc/apt/sources.list.d/github-cli.sources`;
 
       await $`sudo apt update`;
       await $`sudo apt install -y gh`;
@@ -169,10 +174,10 @@ export const tools: Tool[] = [
     name: "Bun",
     bin: "bun",
     linux: async () => {
-      await $`curl -fsSL https://bun.sh/install | bash`;
+      await $`curl -fsSL https://bun.com/install | bash`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://bun.sh/install | bash`;
+      await $`curl -fsSL https://bun.com/install | bash`;
     },
     windows: async () => {
       await $`powershell -NoProfile -Command ${"irm bun.sh/install.ps1 | iex"}`;
@@ -225,7 +230,7 @@ export const tools: Tool[] = [
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command ${"irm https://astral.sh/uv/install.ps1 | iex"}`;
+      await $`powershell -ExecutionPolicy ByPass -NoProfile -Command ${"irm https://astral.sh/uv/install.ps1 | iex"}`;
     },
   },
 
@@ -251,13 +256,17 @@ export const tools: Tool[] = [
     name: "VS Code",
     bin: "code",
     linux: async () => {
-      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc -o /tmp/microsoft.asc`;
-      await $`sudo install -D -o root -g root -m 644 /tmp/microsoft.asc /etc/apt/keyrings/packages.microsoft.gpg`;
+      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`;
+      await $`sudo chmod go+r /etc/apt/keyrings/packages.microsoft.gpg`;
 
-      const repo =
-        "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main";
-      await Bun.write("/tmp/vscode.list", repo + "\n");
-      await $`sudo cp /tmp/vscode.list /etc/apt/sources.list.d/vscode.list`;
+      const sources = `Types: deb
+URIs: https://packages.microsoft.com/repos/code
+Suites: stable
+Components: main
+Architectures: amd64,arm64
+Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
+      await Bun.write("/tmp/vscode.sources", sources + "\n");
+      await $`sudo cp /tmp/vscode.sources /etc/apt/sources.list.d/vscode.sources`;
 
       await $`sudo apt update`;
       await $`sudo apt install -y code`;
