@@ -17,7 +17,7 @@ await $`mkdir -p dist`;
 
 for (const { target, output } of targets) {
   console.log(`\x1b[36mBuilding ${output}...\x1b[0m`);
-  await $`bun build --compile --target=${target} --minify src/setup.ts --outfile dist/${output}`;
+  await $`bun build --compile --target=${target} src/setup.ts --outfile dist/${output}`;
 }
 
 console.log("\n\x1b[32mAll binaries built in dist/\x1b[0m");
