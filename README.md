@@ -1,33 +1,39 @@
-# Claude Setup
+# builder-setup
 
-Automated dev environment setup.
+Automated dev environment setup. Single binary per platform, distributed via GitHub Releases.
 
 ## Quick Start
 
-### Windows
-
-1. Open **PowerShell as Administrator** and run:
-   ```powershell
-   irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/setup-windows.ps1 | iex
-   ```
-2. **Restart your PC** and re-run the command above
-3. Open **Ubuntu** from Start Menu, set your **username and password**
-4. Inside Ubuntu, run:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/setup-wsl.sh | bash
-   ```
-
-### Ubuntu
+### Linux / macOS / WSL
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/setup-ubuntu.sh | bash
+curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | bash
 ```
 
-### macOS
+### Windows (PowerShell as Administrator)
 
-> Coming soon
+```powershell
+irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
+```
 
-## TODO
+> Windows requires PowerShell with Administrator privileges. CMD is not supported.
 
-- [ ] Setup interativo de Git e GitHub via Claude
-- [ ] Setup para macOS
+## What it installs
+
+| Tool | Linux | macOS | Windows |
+|------|-------|-------|---------|
+| System packages (apt/brew) | ✅ | ✅ | ☑️ |
+| Git | ☑️ | ☑️ | ✅ |
+| Git defaults (`init.defaultBranch main`) | ✅ | ✅ | ✅ |
+| Docker | ✅ | ✅ | ✅ |
+| GitHub CLI | ✅ | ✅ | ✅ |
+| Node.js (fnm + corepack) | ✅ | ✅ | ✅ |
+| Bun | ✅ | ✅ | ✅ |
+| Go | ✅ | ✅ | ✅ |
+| uv | ✅ | ✅ | ✅ |
+| Google Cloud SDK | ✅ | ✅ | ✅ |
+| VS Code | ✅ | ✅ | ✅ |
+| Claude Code | ✅ | ✅ | ✅ |
+| WSL post config | ✅ | ⬚ | ⬚ |
+
+> ✅ installs &nbsp; ☑️ already on system &nbsp; ⬚ not applicable
