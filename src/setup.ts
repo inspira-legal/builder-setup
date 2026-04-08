@@ -110,7 +110,11 @@ async function main() {
   }
 
   await runTools(installs, "Installing");
-  await runTools(setups, "Setting up");
+
+  const pendingSetups = setups.filter((t) => !t.when || t.when());
+  if (pendingSetups.length > 0) {
+    await runTools(pendingSetups, "Setting up");
+  }
 
   // Stop sudo keep-alive
   if (sudoKeepAlive) clearInterval(sudoKeepAlive);
