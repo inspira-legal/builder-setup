@@ -75,6 +75,8 @@ async function main() {
   }
 
   // Run each tool
+  const failed: string[] = [];
+
   for (const tool of tools) {
     if (tool.when && !tool.when()) continue;
 
@@ -106,15 +108,13 @@ async function main() {
 
       // Verify binary is actually available after install
       if (tool.bin && !Bun.which(tool.bin)) {
-        log.error(`${tool.name} installed but binary "${tool.bin}" not found in PATH.`);
-        log.info("Try opening a new terminal and running builder-setup again.");
-        process.exit(1);
+        log.warn(`${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`);
       }
 
       log.done(tool.name);
     } catch (err) {
       log.error(`${tool.name}: ${(err as Error).message}`);
-      process.exit(1);
+      failed.push(tool.name);
     }
   }
 
@@ -123,6 +123,20 @@ async function main() {
 
   // Completion
   console.log("");
+
+  if (failed.length > 0) {
+    const R = "\x1b[31m";
+    console.log(`${R}========================================${N}`);
+    console.log(`${R}  Some tools failed to install:         ${N}`);
+    for (const name of failed) {
+      console.log(`${R}    - ${name}${N}`);
+    }
+    console.log(`${R}========================================${N}`);
+    console.log("");
+    log.info("Fix the issues above and run builder-setup again.");
+    process.exit(1);
+  }
+
   console.log(`${G}========================================${N}`);
   if (wsl) {
     console.log(`${G}  WSL setup complete!                   ${N}`);

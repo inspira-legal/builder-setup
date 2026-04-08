@@ -38,3 +38,10 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | WSL post config | ✅ | ⬚ | ⬚ |
 
 > ✅ installs &nbsp; ☑️ already on system &nbsp; ⬚ not applicable
+
+## Coming soon
+
+- `gh auth login` — GitHub authentication
+- `gcloud auth login` — Google Cloud authentication
+- Git SSH key setup
+- Interactive Claude-guided setup

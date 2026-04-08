@@ -65,6 +65,7 @@ export const log = {
   step: (msg: string) => console.log(`\n${CYAN}==>${NC} ${BOLD}${msg}${NC}`),
   skip: (msg: string) => console.log(`    ${YELLOW}[SKIP]${NC} ${msg}`),
   done: (msg: string) => console.log(`    ${GREEN}[DONE]${NC} ${msg}`),
+  warn: (msg: string) => console.log(`    ${YELLOW}[WARN]${NC} ${msg}`),
   error: (msg: string) => console.error(`    ${RED}[ERR]${NC}  ${msg}`),
   info: (msg: string) => console.log(`    ${msg}`),
 };
