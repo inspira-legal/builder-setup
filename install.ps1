@@ -1,23 +1,15 @@
-# Thin wrapper: downloads the Windows binary from GitHub Releases and runs it.
-# Must be run as Administrator.
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "ERROR: This script must be run as Administrator." -ForegroundColor Red
-    Write-Host "Right-click PowerShell -> 'Run as Administrator' and try again." -ForegroundColor Yellow
-    exit 1
-}
+$repo = "inspira-legal/builder-setup"
+$asset = "setup-windows-x64.exe"
+$url = "https://github.com/$repo/releases/latest/download/$asset"
+$tmp = "$env:TEMP\$asset"
 
-$ErrorActionPreference = "Stop"
+Write-Host "Downloading builder-setup..." -ForegroundColor Cyan
+Invoke-WebRequest -Uri $url -OutFile $tmp
 
-$repo    = "inspira-legal/builder-setup"
-$binary  = "setup-windows-x64.exe"
-$url     = "https://github.com/$repo/releases/latest/download/$binary"
-$dest    = "$env:TEMP\$binary"
+Write-Host "Running builder-setup..." -ForegroundColor Cyan
+Start-Process -FilePath $tmp -Wait
 
-Write-Host "Downloading $binary..."
-Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
-
-Write-Host "Running setup..."
-& $dest
-
-Remove-Item $dest -ErrorAction SilentlyContinue
+Remove-Item $tmp -ErrorAction SilentlyContinue
