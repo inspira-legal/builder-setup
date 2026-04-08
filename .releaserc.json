@@ -1,0 +1,26 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          { "path": "dist/setup-linux-x64", "label": "Linux x64" },
+          { "path": "dist/setup-linux-arm64", "label": "Linux arm64" },
+          { "path": "dist/setup-darwin-x64", "label": "macOS x64" },
+          { "path": "dist/setup-darwin-arm64", "label": "macOS arm64" },
+          { "path": "dist/setup-windows-x64.exe", "label": "Windows x64" }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json"],
+        "message": "chore(release): ${nextRelease.version}"
+      }
+    ]
+  ]
+}

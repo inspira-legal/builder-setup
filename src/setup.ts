@@ -35,7 +35,7 @@ async function main() {
     }
     // Check for Administrator privileges
     const admin =
-      await $`powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`.text();
+      await $`([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)`.text();
     if (admin.trim() !== "True") {
       console.error("\x1b[31mError: Please run this as Administrator.\x1b[0m");
       console.error("Right-click PowerShell -> 'Run as Administrator' and try again.");
@@ -76,7 +76,7 @@ async function main() {
   }
 
   // Run each tool
-  const failed: string[] = [];
+  const failed: { name: string; output: string }[] = [];
 
   for (const tool of tools) {
     if (tool.when && !tool.when()) continue;
@@ -116,8 +116,10 @@ async function main() {
 
       log.done(tool.name);
     } catch (err) {
-      log.error(`${tool.name}: ${(err as Error).message}`);
-      failed.push(tool.name);
+      const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
+      const output = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
+      log.error(tool.name);
+      failed.push({ name: tool.name, output });
     }
   }
 
@@ -129,10 +131,14 @@ async function main() {
 
   if (failed.length > 0) {
     const R = "\x1b[31m";
+    const DIM = "\x1b[2m";
     console.log(`${R}========================================${N}`);
     console.log(`${R}  Some tools failed to install:         ${N}`);
-    for (const name of failed) {
+    for (const { name, output } of failed) {
       console.log(`${R}    - ${name}${N}`);
+      for (const line of output.split("\n").slice(-10)) {
+        console.log(`${DIM}      ${line}${N}`);
+      }
     }
     console.log(`${R}========================================${N}`);
     console.log("");
