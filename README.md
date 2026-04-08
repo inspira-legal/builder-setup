@@ -16,15 +16,17 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/in
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
 ```
 
-> Windows requires PowerShell with Administrator privileges. CMD is not supported.
+> The install script downloads the binary and launches it with Administrator privileges via UAC prompt.
 
-## What it installs
+## What it does
+
+### Installs
 
 | Tool | Linux | macOS | Windows |
 |------|-------|-------|---------|
-| System packages (apt/brew) | ✅ | ✅ | ☑️ |
-| Git | ☑️ | ☑️ | ✅ |
-| Git defaults (`init.defaultBranch main`) | ✅ | ✅ | ✅ |
+| System packages (apt update / brew) | ✅ | ✅ | ⬚ |
+| unzip | ✅ | ⬚ | ⬚ |
+| Git | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ |
 | Node.js (fnm) | ✅ | ✅ | ✅ |
@@ -35,9 +37,15 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | Google Cloud SDK | ✅ | ✅ | ✅ |
 | VS Code | ✅ | ✅ | ✅ |
 | Claude Code | ✅ | ✅ | ✅ |
-| WSL post config | ✅ | ⬚ | ⬚ |
 
-> ✅ installs &nbsp; ☑️ already on system &nbsp; ⬚ not applicable
+### Setups
+
+| Config | Linux | macOS | Windows |
+|--------|-------|-------|---------|
+| Git config (`init.defaultBranch main`) | ✅ | ✅ | ✅ |
+| WSL config (editor, browser) | ✅ | ⬚ | ⬚ |
+
+> ✅ supported &nbsp; ⬚ not applicable
 
 ## Coming soon
 
