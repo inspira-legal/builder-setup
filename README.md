@@ -20,10 +20,8 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 
 ## What it does
 
-### Installs
-
-| Tool | Windows | macOS | Linux | WSL |
-|------|---------|-------|-------|-----|
+| | Windows | macOS | Linux | WSL |
+|--|---------|-------|-------|-----|
 | System packages | ⬚ | ✅ | ✅ | ✅ |
 | unzip (dep of fnm and uv) | ⬚ | ⬚ | ✅ | ✅ |
 | Git | ✅ | ✅ | ✅ | ✅ |
@@ -37,12 +35,7 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
 | VS Code | ✅ | ✅ | ✅ | ✅ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ |
-
-### Setups
-
-| Config | Windows | macOS | Linux | WSL |
-|--------|---------|-------|-------|-----|
-| Git config (`init.defaultBranch main`) | ✅ | ✅ | ✅ | ✅ |
+| Git config | ✅ | ✅ | ✅ | ✅ |
 | WSL config (editor, browser) | ⬚ | ⬚ | ⬚ | ✅ |
 
 > ✅ supported &nbsp; ⬚ not applicable
