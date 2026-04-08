@@ -2,6 +2,12 @@ pre-commit:
   parallel: true
   commands:
     lint:
-      run: bun run lint
+      glob: "*.{ts,tsx,js,jsx}"
+      run: oxlint --fix {staged_files}
+      stage_fixed: true
+    format:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: oxfmt {staged_files}
+      stage_fixed: true
     typecheck:
       run: bun --bun tsc
