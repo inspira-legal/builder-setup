@@ -8,6 +8,10 @@ const FNM = `${FNM_DIR}/fnm`;
 
 // ── Shared helpers ──
 
+async function winget(id: string) {
+  await $`powershell.exe -Command "winget install -e --id ${id} --accept-source-agreements --accept-package-agreements"`.quiet();
+}
+
 function fnmBin(): string {
   return has("fnm") ? "fnm" : FNM;
 }
@@ -73,7 +77,7 @@ export const installs: Tool[] = [
       await $`brew install git`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Git.Git");
     },
   },
 
@@ -91,7 +95,7 @@ export const installs: Tool[] = [
       await $`brew install --cask docker-desktop`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Docker.DockerDesktop");
     },
   },
 
@@ -120,7 +124,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install gh`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("GitHub.cli");
     },
   },
 
@@ -152,7 +156,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       };
     },
     windows: async () => {
-      await $`winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Schniz.fnm");
       await $`fnm install --lts`.quiet();
       await $`fnm default lts-latest`.quiet();
     },
@@ -168,7 +172,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://bun.com/install | bash`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Oven-sh.Bun --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Oven-sh.Bun");
     },
   },
 
@@ -182,7 +186,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id pnpm.pnpm --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("pnpm.pnpm");
     },
   },
 
@@ -204,7 +208,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install go`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id GoLang.Go --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("GoLang.Go");
     },
   },
 
@@ -218,7 +222,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("astral-sh.uv");
     },
   },
 
@@ -236,7 +240,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Google.CloudSDK --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Google.CloudSDK");
     },
   },
 
@@ -263,7 +267,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`brew install --cask visual-studio-code`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Microsoft.VisualStudioCode --accept-source-agreements --accept-package-agreements`.quiet();
+      await winget("Microsoft.VisualStudioCode");
     },
   },
 
