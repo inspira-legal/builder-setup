@@ -58,6 +58,9 @@ export const tools: Tool[] = [
         await $`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.quiet();
       }
     },
+    windows: async () => {
+      await $`powershell -NoProfile -Command "winget upgrade --all --accept-source-agreements --accept-package-agreements"`.quiet();
+    },
   },
 
   {
