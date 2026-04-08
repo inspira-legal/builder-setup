@@ -3,7 +3,7 @@
  * Usage: bun run scripts/build.ts
  */
 
-import { mkdirSync } from "fs";
+import { $ } from "bun";
 
 const targets = [
   { target: "bun-linux-x64", output: "setup-linux-x64" },
@@ -13,18 +13,11 @@ const targets = [
   { target: "bun-windows-x64", output: "setup-windows-x64.exe" },
 ] as const;
 
-mkdirSync("dist", { recursive: true });
+await $`mkdir -p dist`;
 
 for (const { target, output } of targets) {
   console.log(`\x1b[36mBuilding ${output}...\x1b[0m`);
-  await Bun.build({
-    entrypoints: ["src/setup.ts"],
-    compile: {
-      target,
-      outfile: `dist/${output}`,
-    },
-    minify: true,
-  });
+  await $`bun build --compile --target=${target} --minify src/setup.ts --outfile dist/${output}`;
 }
 
 console.log("\n\x1b[32mAll binaries built in dist/\x1b[0m");
