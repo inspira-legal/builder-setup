@@ -10,6 +10,6 @@ Write-Host "Downloading builder-setup..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $tmp
 
 Write-Host "Launching as Administrator..." -ForegroundColor Cyan
-Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command & '$tmp'"
+Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command & '$tmp'; Read-Host 'Press Enter to close'"
 
 Remove-Item $tmp -ErrorAction SilentlyContinue
