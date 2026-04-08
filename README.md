@@ -1,8 +1,8 @@
 # builder-setup
 
-Automated dev environment setup. Single binary per platform, distributed via GitHub Releases.
+Setup automático do ambiente de desenvolvimento. Binário único por plataforma, distribuído via GitHub Releases.
 
-## Quick Start
+## Início rápido
 
 ### Linux / macOS / WSL
 
@@ -16,14 +16,14 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/in
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
 ```
 
-> The install script downloads the binary and launches it with Administrator privileges via UAC prompt.
+> O script de instalação baixa o binário e executa com privilégios de Administrador via prompt UAC.
 
-## What it does
+## O que faz
 
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
 | System packages | ⬚ | ✅ | ✅ | ✅ |
-| unzip (dep of fnm and uv) | ⬚ | ⬚ | ✅ | ✅ |
+| unzip (dep de fnm e uv) | ⬚ | ⬚ | ✅ | ✅ |
 | Git | ✅ | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ | ✅ |
@@ -38,11 +38,11 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | Git config | ✅ | ✅ | ✅ | ✅ |
 | WSL config (editor, browser) | ⬚ | ⬚ | ⬚ | ✅ |
 
-> ✅ supported &nbsp; ⬚ not applicable
+> ✅ suportado &nbsp; ⬚ não se aplica
 
-## Coming soon
+## Em breve
 
-- `gh auth login` — GitHub authentication
-- `gcloud auth login` — Google Cloud authentication
-- Git SSH key setup
-- Interactive Claude-guided setup
+- `gh auth login` — autenticação GitHub
+- `gcloud auth login` — autenticação Google Cloud
+- Setup de chave SSH do Git
+- Setup interativo guiado por Claude
