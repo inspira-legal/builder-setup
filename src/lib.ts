@@ -63,10 +63,10 @@ const NC = "\x1b[0m";
 
 export const log = {
   step: (msg: string) => console.log(`\n${CYAN}==>${NC} ${BOLD}${msg}${NC}`),
-  skip: (msg: string) => console.log(`    ${YELLOW}[SKIP]${NC} ${msg}`),
-  done: (msg: string) => console.log(`    ${GREEN}[DONE]${NC} ${msg}`),
-  warn: (msg: string) => console.log(`    ${YELLOW}[WARN]${NC} ${msg}`),
-  error: (msg: string) => console.error(`    ${RED}[ERR]${NC}  ${msg}`),
+  skip: (msg: string) => console.log(`    ${YELLOW}[PULAR]${NC} ${msg}`),
+  done: (msg: string) => console.log(`    ${GREEN}[FEITO]${NC} ${msg}`),
+  warn: (msg: string) => console.log(`    ${YELLOW}[AVISO]${NC} ${msg}`),
+  error: (msg: string) => console.error(`    ${RED}[ERRO]${NC}  ${msg}`),
   info: (msg: string) => console.log(`    ${msg}`),
 };
 

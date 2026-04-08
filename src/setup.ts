@@ -36,18 +36,18 @@ async function main() {
   const N = "\x1b[0m";
 
   console.log("");
-  console.log(`  ${B}builder-setup${N}`);
-  console.log(`  ${C}Platform:${N} ${platform}${wsl ? " (WSL)" : ""}`);
-  console.log(`  ${C}Arch:${N}     ${process.arch}`);
+  console.log(`  ${B}Builder's Setup${N}`);
+  console.log(`  ${C}Plataforma:${N} ${platform}${wsl ? " (WSL)" : ""}`);
+  console.log(`  ${C}Arquitetura:${N} ${process.arch}`);
   if (platform !== "windows") {
-    console.log(`  ${C}Profile:${N}  ${profilePath}`);
+    console.log(`  ${C}Profile:${N}    ${profilePath}`);
   }
 
   // Pre-cache sudo on linux (macOS tools don't need sudo)
   let sudoKeepAlive: Timer | undefined;
   if (platform === "linux") {
     console.log("");
-    log.info("This script needs sudo access to install packages.");
+    log.info("Este script precisa de acesso sudo para instalar pacotes.");
     await $`sudo -v`;
 
     // Keep sudo alive in the background
@@ -65,16 +65,16 @@ async function main() {
     for (const tool of tools) {
       if (tool.when && !tool.when()) continue;
 
-      log.step(`Checking ${tool.name}...`);
+      log.step(`Verificando ${tool.name}...`);
 
       const installer = getInstaller(tool, platform);
       if (!installer) {
-        log.skip("not applicable on this platform");
+        log.skip("não se aplica nesta plataforma");
         continue;
       }
 
       if (await isInstalled(tool)) {
-        log.skip("already done");
+        log.skip("já instalado");
         continue;
       }
 
@@ -89,13 +89,13 @@ async function main() {
               await appendFile(profilePath, line);
             }
           }
-          log.info(`Updated ${profilePath}`);
+          log.info(`Atualizado ${profilePath}`);
         }
 
         // Verify binary is actually available after install
         if (tool.bin && !Bun.which(tool.bin)) {
           log.warn(
-            `${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`,
+            `${tool.name} instalado mas "${tool.bin}" não encontrado no PATH. Disponível após reiniciar o terminal.`,
           );
         }
 
@@ -109,11 +109,11 @@ async function main() {
     }
   }
 
-  await runTools(installs, "Installing");
+  await runTools(installs, "Instalando");
 
   const pendingSetups = setups.filter((t) => !t.when || t.when());
   if (pendingSetups.length > 0) {
-    await runTools(pendingSetups, "Setting up");
+    await runTools(pendingSetups, "Configurando");
   }
 
   // Stop sudo keep-alive
@@ -126,7 +126,7 @@ async function main() {
     const R = "\x1b[31m";
     const DIM = "\x1b[2m";
     console.log(`${R}========================================${N}`);
-    console.log(`${R}  Some tools failed to install:         ${N}`);
+    console.log(`${R}  Algumas ferramentas falharam:          ${N}`);
     for (const { name, output } of failed) {
       console.log(`${R}    - ${name}${N}`);
       for (const line of output.split("\n").slice(-10)) {
@@ -135,24 +135,24 @@ async function main() {
     }
     console.log(`${R}========================================${N}`);
     console.log("");
-    log.info("Fix the issues above and run builder-setup again.");
+    log.info("Corrija os problemas acima e rode builder-setup novamente.");
     process.exit(1);
   }
 
   console.log(`${G}========================================${N}`);
   if (wsl) {
-    console.log(`${G}  WSL setup complete!                   ${N}`);
-    console.log(`${G}  Restarting WSL in 3 seconds...        ${N}`);
-    console.log(`${G}  Open Ubuntu again after restart.      ${N}`);
+    console.log(`${G}  Setup do WSL concluído!               ${N}`);
+    console.log(`${G}  Reiniciando WSL em 3 segundos...     ${N}`);
+    console.log(`${G}  Abra o Ubuntu novamente após reinício.${N}`);
     console.log(`${G}========================================${N}`);
     await Bun.sleep(3000);
     await $`wsl.exe --shutdown`;
   } else if (platform === "windows") {
-    console.log(`${G}  Windows setup complete!               ${N}`);
+    console.log(`${G}  Setup do Windows concluído!           ${N}`);
     console.log(`${G}========================================${N}`);
   } else {
-    console.log(`${G}  Setup complete!                       ${N}`);
-    console.log(`${G}  Open a new terminal to apply changes. ${N}`);
+    console.log(`${G}  Setup concluído!                      ${N}`);
+    console.log(`${G}  Abra um novo terminal para aplicar.   ${N}`);
     console.log(`${G}========================================${N}`);
   }
 }

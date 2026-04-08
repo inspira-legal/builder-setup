@@ -87,7 +87,7 @@ export const installs: Tool[] = [
     linux: async () => {
       if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
         await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
-        log.done("systemd enabled in wsl.conf");
+        log.done("systemd habilitado em wsl.conf");
       }
       await installDockerApt();
     },
@@ -327,13 +327,13 @@ export const setups: Tool[] = [
       const edge = "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 
       if (await fileExists(chrome)) {
-        log.done("BROWSER set to Chrome");
+        log.done("BROWSER definido como Chrome");
         lines.push(`export BROWSER="${chrome}"`);
       } else if (await fileExists(edge)) {
-        log.done("BROWSER set to Edge");
+        log.done("BROWSER definido como Edge");
         lines.push(`export BROWSER="${edge}"`);
       } else {
-        log.info("No Chrome or Edge found in Windows, skipping BROWSER");
+        log.info("Chrome ou Edge não encontrado no Windows, pulando BROWSER");
       }
 
       return { profile: lines };

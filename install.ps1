@@ -6,9 +6,12 @@ $asset = "setup-windows-x64.exe"
 $url = "https://github.com/$repo/releases/latest/download/$asset"
 $tmp = "$env:TEMP\$asset"
 
-Write-Host "Downloading builder-setup..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  Builder's Setup" -ForegroundColor White
+Write-Host ""
+Write-Host "  Baixando..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $tmp
 
-Write-Host "Launching as Administrator..." -ForegroundColor Cyan
+Write-Host "  Solicitando acesso de administrador..." -ForegroundColor Cyan
 Start-Process $tmp -Verb RunAs -Wait
 Remove-Item $tmp -ErrorAction SilentlyContinue
