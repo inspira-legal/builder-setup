@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { tools } from "./tools";
+import { installs, setups } from "./tools";
 import {
   type Tool,
   type Platform,
@@ -59,54 +59,58 @@ async function main() {
     }, 50_000);
   }
 
-  // Run each tool
   const failed: { name: string; output: string }[] = [];
 
-  for (const tool of tools) {
-    if (tool.when && !tool.when()) continue;
+  async function runTools(tools: Tool[], verb: string) {
+    for (const tool of tools) {
+      if (tool.when && !tool.when()) continue;
 
-    log.step(`Checking ${tool.name}...`);
+      log.step(`Checking ${tool.name}...`);
 
-    const installer = getInstaller(tool, platform);
-    if (!installer) {
-      log.skip("not applicable on this platform");
-      continue;
-    }
+      const installer = getInstaller(tool, platform);
+      if (!installer) {
+        log.skip("not applicable on this platform");
+        continue;
+      }
 
-    if (await isInstalled(tool)) {
-      log.skip("already installed");
-      continue;
-    }
+      if (await isInstalled(tool)) {
+        log.skip("already done");
+        continue;
+      }
 
-    try {
-      log.info(`Installing ${tool.name}...`);
-      const result = await installer();
+      try {
+        log.info(`${verb} ${tool.name}...`);
+        const result = await installer();
 
-      // Write profile lines if returned
-      if (result && result.profile.length > 0) {
-        for (const line of result.profile) {
-          if (!(await fileContains(profilePath, line))) {
-            await appendFile(profilePath, line);
+        // Write profile lines if returned
+        if (result && result.profile.length > 0) {
+          for (const line of result.profile) {
+            if (!(await fileContains(profilePath, line))) {
+              await appendFile(profilePath, line);
+            }
           }
+          log.info(`Updated ${profilePath}`);
         }
-        log.info(`Updated ${profilePath}`);
-      }
 
-      // Verify binary is actually available after install
-      if (tool.bin && !Bun.which(tool.bin)) {
-        log.warn(
-          `${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`,
-        );
-      }
+        // Verify binary is actually available after install
+        if (tool.bin && !Bun.which(tool.bin)) {
+          log.warn(
+            `${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`,
+          );
+        }
 
-      log.done(tool.name);
-    } catch (err) {
-      const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
-      const output = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
-      log.error(tool.name);
-      failed.push({ name: tool.name, output });
+        log.done(tool.name);
+      } catch (err) {
+        const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
+        const output = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
+        log.error(tool.name);
+        failed.push({ name: tool.name, output });
+      }
     }
   }
+
+  await runTools(installs, "Installing");
+  await runTools(setups, "Setting up");
 
   // Stop sudo keep-alive
   if (sudoKeepAlive) clearInterval(sudoKeepAlive);

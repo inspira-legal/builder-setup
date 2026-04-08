@@ -34,13 +34,9 @@ async function installDockerApt() {
   }
 }
 
-// ── Tool list ──
+// ── Install list ──
 
-export const tools: Tool[] = [
-  // ────────────────────────────────────────
-  //  System essentials
-  // ────────────────────────────────────────
-
+export const installs: Tool[] = [
   {
     name: "System packages",
     check: async () => {
@@ -68,23 +64,6 @@ export const tools: Tool[] = [
     bin: "git",
     windows: async () => {
       await $`powershell -NoProfile -Command "winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements"`.quiet();
-    },
-  },
-
-  {
-    name: "Git defaults",
-    check: async () => {
-      const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
-      return result.stdout.toString().trim() === "main";
-    },
-    linux: async () => {
-      await $`git config --global init.defaultBranch main`.quiet();
-    },
-    darwin: async () => {
-      await $`git config --global init.defaultBranch main`.quiet();
-    },
-    windows: async () => {
-      await $`powershell -NoProfile -Command "git config --global init.defaultBranch main"`.quiet();
     },
   },
 
@@ -291,13 +270,30 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`.quiet();
     },
   },
+];
 
-  // ────────────────────────────────────────
-  //  WSL-specific config (guarded by isWSL)
-  // ────────────────────────────────────────
+// ── Setup list ──
+
+export const setups: Tool[] = [
+  {
+    name: "Git config",
+    check: async () => {
+      const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
+      return result.stdout.toString().trim() === "main";
+    },
+    linux: async () => {
+      await $`git config --global init.defaultBranch main`.quiet();
+    },
+    darwin: async () => {
+      await $`git config --global init.defaultBranch main`.quiet();
+    },
+    windows: async () => {
+      await $`powershell -NoProfile -Command "git config --global init.defaultBranch main"`.quiet();
+    },
+  },
 
   {
-    name: "WSL post config",
+    name: "WSL config",
     when: () => isWSL(),
     check: async () => {
       const profile = getProfilePath();
