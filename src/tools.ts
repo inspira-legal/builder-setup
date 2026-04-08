@@ -277,6 +277,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 export const setups: Tool[] = [
   {
     name: "Git config",
+    when: () => has("git"),
     check: async () => {
       const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
       return result.stdout.toString().trim() === "main";
