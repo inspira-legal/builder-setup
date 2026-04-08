@@ -13,5 +13,5 @@ Write-Host "  Baixando..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $tmp
 
 Write-Host "  Solicitando acesso de administrador..." -ForegroundColor Cyan
-Start-Process $tmp -Verb RunAs -Wait
+Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command & '$tmp'; pause"
 Remove-Item $tmp -ErrorAction SilentlyContinue
