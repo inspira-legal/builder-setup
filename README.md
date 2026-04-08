@@ -24,8 +24,8 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 
 | Tool | Linux | macOS | Windows |
 |------|-------|-------|---------|
-| System packages (apt update / brew) | ✅ | ✅ | ⬚ |
-| unzip | ✅ | ⬚ | ⬚ |
+| System packages | ✅ | ✅ | ⬚ |
+| unzip (dep of fnm and uv) | ✅ | ⬚ | ⬚ |
 | Git | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ |

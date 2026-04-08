@@ -39,6 +39,7 @@ async function installDockerApt() {
 export const installs: Tool[] = [
   {
     name: "System packages",
+    when: () => process.platform !== "win32",
     check: async () => {
       if (process.platform === "darwin") return has("brew");
       return false;
@@ -56,6 +57,7 @@ export const installs: Tool[] = [
   {
     name: "unzip",
     bin: "unzip",
+    when: () => process.platform === "linux",
     linux: async () => {
       await $`sudo apt install -y unzip`.quiet();
     },
