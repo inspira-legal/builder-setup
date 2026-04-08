@@ -176,7 +176,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://bun.com/install | bash`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "irm bun.sh/install.ps1 | iex"`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Oven-sh.Bun --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -190,7 +190,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "irm https://get.pnpm.io/install.ps1 | iex"`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id pnpm.pnpm --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -226,7 +226,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "irm https://astral.sh/uv/install.ps1 | iex"`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
