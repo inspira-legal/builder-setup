@@ -27,8 +27,9 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | Git defaults (`init.defaultBranch main`) | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ |
-| Node.js (fnm + corepack) | ✅ | ✅ | ✅ |
+| Node.js (fnm) | ✅ | ✅ | ✅ |
 | Bun | ✅ | ✅ | ✅ |
+| pnpm | ✅ | ✅ | ✅ |
 | Go | ✅ | ✅ | ✅ |
 | uv | ✅ | ✅ | ✅ |
 | Google Cloud SDK | ✅ | ✅ | ✅ |

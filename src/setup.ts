@@ -59,19 +59,19 @@ async function main() {
   }
 
   // Pre-cache sudo on linux (macOS tools don't need sudo)
+  let sudoKeepAlive: Timer | undefined;
   if (platform === "linux") {
     console.log("");
     log.info("This script needs sudo access to install packages.");
     await $`sudo -v`;
 
     // Keep sudo alive in the background
-    const keepAlive = setInterval(() => {
+    sudoKeepAlive = setInterval(() => {
       Bun.spawn(["sudo", "-n", "true"], {
         stdout: "ignore",
         stderr: "ignore",
       });
     }, 50_000);
-    process.on("exit", () => clearInterval(keepAlive));
   }
 
   // Run each tool
@@ -104,12 +104,22 @@ async function main() {
         log.info(`Updated ${profilePath}`);
       }
 
+      // Verify binary is actually available after install
+      if (tool.bin && !Bun.which(tool.bin)) {
+        log.error(`${tool.name} installed but binary "${tool.bin}" not found in PATH.`);
+        log.info("Try opening a new terminal and running builder-setup again.");
+        process.exit(1);
+      }
+
       log.done(tool.name);
     } catch (err) {
       log.error(`${tool.name}: ${(err as Error).message}`);
       process.exit(1);
     }
   }
+
+  // Stop sudo keep-alive
+  if (sudoKeepAlive) clearInterval(sudoKeepAlive);
 
   // Completion
   console.log("");

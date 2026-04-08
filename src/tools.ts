@@ -145,7 +145,7 @@ export const tools: Tool[] = [
   // ────────────────────────────────────────
 
   {
-    name: "Node.js (fnm + corepack)",
+    name: "Node.js (fnm)",
     check: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return false;
       const result = await $`${fnmBin()} ls`.quiet().nothrow();
@@ -160,7 +160,7 @@ export const tools: Tool[] = [
       return {
         profile: [
           'export PATH="$HOME/.local/share/fnm:$PATH"',
-          'eval "$(fnm env --use-on-cd --corepack-enabled)"',
+          'eval "$(fnm env --use-on-cd)"',
         ],
       };
     },
@@ -171,7 +171,7 @@ export const tools: Tool[] = [
       return {
         profile: [
           'export PATH="$HOME/.local/share/fnm:$PATH"',
-          'eval "$(fnm env --use-on-cd --corepack-enabled)"',
+          'eval "$(fnm env --use-on-cd)"',
         ],
       };
     },
@@ -197,6 +197,20 @@ export const tools: Tool[] = [
     },
     windows: async () => {
       await $`powershell -NoProfile -Command ${"irm bun.sh/install.ps1 | iex"}`;
+    },
+  },
+
+  {
+    name: "pnpm",
+    bin: "pnpm",
+    linux: async () => {
+      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`;
+    },
+    darwin: async () => {
+      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`;
+    },
+    windows: async () => {
+      await $`powershell -NoProfile -Command ${"irm https://get.pnpm.io/install.ps1 | iex"}`;
     },
   },
 
