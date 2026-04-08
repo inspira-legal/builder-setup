@@ -285,7 +285,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`curl -fsSL https://claude.ai/install.sh | bash`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Anthropic.ClaudeCode --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
