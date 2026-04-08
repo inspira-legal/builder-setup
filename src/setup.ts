@@ -79,6 +79,7 @@ async function main() {
     }
 
     try {
+      log.info(`Installing ${tool.name}...`);
       const result = await installer();
 
       // Write profile lines if returned
