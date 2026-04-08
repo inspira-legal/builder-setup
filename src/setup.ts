@@ -27,22 +27,6 @@ async function isInstalled(tool: Tool): Promise<boolean> {
 async function main() {
   const platform = getPlatform();
 
-  if (platform === "windows") {
-    // CMD sets PROMPT env var (e.g. "$P$G"), PowerShell does not
-    if (process.env.PROMPT) {
-      console.error("\x1b[31mError: Please run this from PowerShell, not CMD.\x1b[0m");
-      process.exit(1);
-    }
-    // Check for Administrator privileges
-    const admin =
-      await $`powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`.text();
-    if (admin.trim() !== "True") {
-      console.error("\x1b[31mError: Please run this as Administrator.\x1b[0m");
-      console.error("Right-click PowerShell -> 'Run as Administrator' and try again.");
-      process.exit(1);
-    }
-  }
-
   const wsl = isWSL();
   const profilePath = getProfilePath();
 
