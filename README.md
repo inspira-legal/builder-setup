@@ -22,28 +22,28 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 
 ### Installs
 
-| Tool | Linux | macOS | Windows |
-|------|-------|-------|---------|
-| System packages | ✅ | ✅ | ⬚ |
-| unzip (dep of fnm and uv) | ✅ | ⬚ | ⬚ |
-| Git | ✅ | ✅ | ✅ |
-| Docker | ✅ | ✅ | ✅ |
-| GitHub CLI | ✅ | ✅ | ✅ |
-| Node.js (fnm) | ✅ | ✅ | ✅ |
-| Bun | ✅ | ✅ | ✅ |
-| pnpm | ✅ | ✅ | ✅ |
-| Go | ✅ | ✅ | ✅ |
-| uv | ✅ | ✅ | ✅ |
-| Google Cloud SDK | ✅ | ✅ | ✅ |
-| VS Code | ✅ | ✅ | ✅ |
-| Claude Code | ✅ | ✅ | ✅ |
+| Tool | Windows | macOS | Linux | WSL |
+|------|---------|-------|-------|-----|
+| System packages | ⬚ | ✅ | ✅ | ✅ |
+| unzip (dep of fnm and uv) | ⬚ | ⬚ | ✅ | ✅ |
+| Git | ✅ | ✅ | ✅ | ✅ |
+| Docker | ✅ | ✅ | ✅ | ✅ |
+| GitHub CLI | ✅ | ✅ | ✅ | ✅ |
+| Node.js (fnm) | ✅ | ✅ | ✅ | ✅ |
+| Bun | ✅ | ✅ | ✅ | ✅ |
+| pnpm | ✅ | ✅ | ✅ | ✅ |
+| Go | ✅ | ✅ | ✅ | ✅ |
+| uv | ✅ | ✅ | ✅ | ✅ |
+| Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
+| VS Code | ✅ | ✅ | ✅ | ✅ |
+| Claude Code | ✅ | ✅ | ✅ | ✅ |
 
 ### Setups
 
-| Config | Linux | macOS | Windows |
-|--------|-------|-------|---------|
-| Git config (`init.defaultBranch main`) | ✅ | ✅ | ✅ |
-| WSL config (editor, browser) | ✅ | ⬚ | ⬚ |
+| Config | Windows | macOS | Linux | WSL |
+|--------|---------|-------|-------|-----|
+| Git config (`init.defaultBranch main`) | ✅ | ✅ | ✅ | ✅ |
+| WSL config (editor, browser) | ⬚ | ⬚ | ⬚ | ✅ |
 
 > ✅ supported &nbsp; ⬚ not applicable
 
