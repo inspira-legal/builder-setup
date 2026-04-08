@@ -64,7 +64,7 @@ export const tools: Tool[] = [
     name: "Git",
     bin: "git",
     windows: async () => {
-      await $`winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -81,7 +81,7 @@ export const tools: Tool[] = [
       await $`git config --global init.defaultBranch main`.quiet();
     },
     windows: async () => {
-      await $`git config --global init.defaultBranch main`.quiet();
+      await $`powershell -NoProfile -Command "git config --global init.defaultBranch main"`.quiet();
     },
   },
 
@@ -99,7 +99,7 @@ export const tools: Tool[] = [
       await $`brew install --cask docker-desktop`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -128,7 +128,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install gh`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -160,13 +160,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       };
     },
     windows: async () => {
-      await $`winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements`.quiet();
-      // Refresh PATH so fnm is available in this session
-      process.env.PATH = (
-        await $`powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')"`.text()
-      ).trim();
-      await $`fnm install --lts`.quiet();
-      await $`fnm default lts-latest`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`powershell -NoProfile -Command "fnm install --lts"`.quiet();
+      await $`powershell -NoProfile -Command "fnm default lts-latest"`.quiet();
     },
   },
 
@@ -216,7 +212,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install go`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id GoLang.Go --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id GoLang.Go --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -248,7 +244,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Google.CloudSDK --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Google.CloudSDK --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
@@ -275,7 +271,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`brew install --cask visual-studio-code`.quiet();
     },
     windows: async () => {
-      await $`winget install -e --id Microsoft.VisualStudioCode --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`powershell -NoProfile -Command "winget install -e --id Microsoft.VisualStudioCode --accept-source-agreements --accept-package-agreements"`.quiet();
     },
   },
 
