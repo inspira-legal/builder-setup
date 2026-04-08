@@ -35,7 +35,7 @@ async function main() {
     }
     // Check for Administrator privileges
     const admin =
-      await $`([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)`.text();
+      await $`powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`.text();
     if (admin.trim() !== "True") {
       console.error("\x1b[31mError: Please run this as Administrator.\x1b[0m");
       console.error("Right-click PowerShell -> 'Run as Administrator' and try again.");

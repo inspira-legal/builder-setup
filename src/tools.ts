@@ -163,7 +163,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements`.quiet();
       // Refresh PATH so fnm is available in this session
       process.env.PATH = (
-        await $`[System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')`.text()
+        await $`powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')"`.text()
       ).trim();
       await $`fnm install --lts`.quiet();
       await $`fnm default lts-latest`.quiet();
@@ -180,7 +180,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://bun.com/install | bash`.quiet();
     },
     windows: async () => {
-      await $`irm bun.sh/install.ps1 | iex`.quiet();
+      await $`powershell -NoProfile -Command "irm bun.sh/install.ps1 | iex"`.quiet();
     },
   },
 
@@ -194,7 +194,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
     },
     windows: async () => {
-      await $`irm https://get.pnpm.io/install.ps1 | iex`.quiet();
+      await $`powershell -NoProfile -Command "irm https://get.pnpm.io/install.ps1 | iex"`.quiet();
     },
   },
 
@@ -230,7 +230,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
     },
     windows: async () => {
-      await $`irm https://astral.sh/uv/install.ps1 | iex`.quiet();
+      await $`powershell -NoProfile -Command "irm https://astral.sh/uv/install.ps1 | iex"`.quiet();
     },
   },
 
@@ -289,7 +289,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`curl -fsSL https://claude.ai/install.sh | bash`.quiet();
     },
     windows: async () => {
-      await $`irm https://claude.ai/install.ps1 | iex`.quiet();
+      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`.quiet();
     },
   },
 
