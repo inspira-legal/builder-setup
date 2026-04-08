@@ -9,7 +9,7 @@ $tmp = "$env:TEMP\$asset"
 Write-Host "Downloading builder-setup..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $tmp
 
-Write-Host "Running builder-setup..." -ForegroundColor Cyan
-Start-Process -FilePath $tmp -Wait
+Write-Host "Launching as Administrator..." -ForegroundColor Cyan
+Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command & '$tmp'"
 
 Remove-Item $tmp -ErrorAction SilentlyContinue

@@ -41,22 +41,23 @@ export const installs: Tool[] = [
     name: "System packages",
     check: async () => {
       if (process.platform === "darwin") return has("brew");
-      const result = await $`stat -c %Y /var/lib/apt/lists/partial`.quiet().nothrow();
-      if (result.exitCode !== 0) return false;
-      const ts = result.stdout.toString().trim();
-      return Math.floor(Date.now() / 1000) - parseInt(ts || "0") < 86400;
+      return false;
     },
     linux: async () => {
-      await $`sudo apt update && sudo apt upgrade -y`.quiet();
-      await $`sudo apt install -y unzip`.quiet();
+      await $`sudo apt update`.quiet();
     },
     darwin: async () => {
       if (!has("brew")) {
         await $`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.quiet();
       }
     },
-    windows: async () => {
-      await $`powershell -NoProfile -Command "winget upgrade --all --accept-source-agreements --accept-package-agreements"`.quiet();
+  },
+
+  {
+    name: "unzip",
+    bin: "unzip",
+    linux: async () => {
+      await $`sudo apt install -y unzip`.quiet();
     },
   },
 
@@ -70,7 +71,7 @@ export const installs: Tool[] = [
       await $`brew install git`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -88,7 +89,7 @@ export const installs: Tool[] = [
       await $`brew install --cask docker-desktop`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -117,7 +118,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install gh`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -149,9 +150,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       };
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements"`.quiet();
-      await $`powershell -NoProfile -Command "fnm install --lts"`.quiet();
-      await $`powershell -NoProfile -Command "fnm default lts-latest"`.quiet();
+      await $`winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements`.quiet();
+      await $`fnm install --lts`.quiet();
+      await $`fnm default lts-latest`.quiet();
     },
   },
 
@@ -165,7 +166,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://bun.com/install | bash`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Oven-sh.Bun --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id Oven-sh.Bun --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -179,7 +180,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id pnpm.pnpm --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id pnpm.pnpm --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -201,7 +202,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`brew install go`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id GoLang.Go --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id GoLang.Go --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -215,7 +216,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -233,7 +234,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Google.CloudSDK --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id Google.CloudSDK --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -260,7 +261,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`brew install --cask visual-studio-code`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "winget install -e --id Microsoft.VisualStudioCode --accept-source-agreements --accept-package-agreements"`.quiet();
+      await $`winget install -e --id Microsoft.VisualStudioCode --accept-source-agreements --accept-package-agreements`.quiet();
     },
   },
 
@@ -296,7 +297,7 @@ export const setups: Tool[] = [
       await $`git config --global init.defaultBranch main`.quiet();
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "git config --global init.defaultBranch main"`.quiet();
+      await $`git config --global init.defaultBranch main`.quiet();
     },
   },
 
