@@ -10,7 +10,7 @@ Automated dev environment setup. Single binary per platform, distributed via Git
 curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | bash
 ```
 
-### Windows (PowerShell as Administrator)
+### Windows
 
 ```powershell
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
