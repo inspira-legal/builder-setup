@@ -83,10 +83,7 @@ export function fileExists(path: string): Promise<boolean> {
 }
 
 /** Check if a file contains a string */
-export async function fileContains(
-  path: string,
-  needle: string,
-): Promise<boolean> {
+export async function fileContains(path: string, needle: string): Promise<boolean> {
   try {
     const content = await Bun.file(path).text();
     return content.includes(needle);

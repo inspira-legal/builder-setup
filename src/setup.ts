@@ -34,7 +34,8 @@ async function main() {
       process.exit(1);
     }
     // Check for Administrator privileges
-    const admin = await $`powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`.text();
+    const admin =
+      await $`powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`.text();
     if (admin.trim() !== "True") {
       console.error("\x1b[31mError: Please run this as Administrator.\x1b[0m");
       console.error("Right-click PowerShell -> 'Run as Administrator' and try again.");
@@ -108,7 +109,9 @@ async function main() {
 
       // Verify binary is actually available after install
       if (tool.bin && !Bun.which(tool.bin)) {
-        log.warn(`${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`);
+        log.warn(
+          `${tool.name} installed but "${tool.bin}" not found in PATH. Will be available after restart.`,
+        );
       }
 
       log.done(tool.name);

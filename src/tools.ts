@@ -1,14 +1,5 @@
 import { $ } from "bun";
-import {
-  type Tool,
-  log,
-  has,
-  isWSL,
-  getProfilePath,
-  fileExists,
-  fileContains,
-  HOME,
-} from "./lib";
+import { type Tool, log, has, isWSL, getProfilePath, fileExists, fileContains, HOME } from "./lib";
 
 // ── Constants ──
 
@@ -28,9 +19,7 @@ async function installDockerApt() {
   await $`sudo chmod a+r /etc/apt/keyrings/docker.asc`;
 
   const arch = (await $`dpkg --print-architecture`.text()).trim();
-  const codename = (
-    await $`bash -c '. /etc/os-release && echo $VERSION_CODENAME'`.text()
-  ).trim();
+  const codename = (await $`bash -c '. /etc/os-release && echo $VERSION_CODENAME'`.text()).trim();
   const repo = `deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${codename} stable`;
   await Bun.write("/tmp/docker.list", repo + "\n");
   await $`sudo cp /tmp/docker.list /etc/apt/sources.list.d/docker.list`;
@@ -56,8 +45,7 @@ export const tools: Tool[] = [
     name: "System packages",
     check: async () => {
       if (process.platform === "darwin") return has("brew");
-      const result =
-        await $`stat -c %Y /var/lib/apt/lists/partial`.quiet().nothrow();
+      const result = await $`stat -c %Y /var/lib/apt/lists/partial`.quiet().nothrow();
       if (result.exitCode !== 0) return false;
       const ts = result.stdout.toString().trim();
       return Math.floor(Date.now() / 1000) - parseInt(ts || "0") < 86400;
@@ -83,8 +71,7 @@ export const tools: Tool[] = [
   {
     name: "Git defaults",
     check: async () => {
-      const result =
-        await $`git config --global init.defaultBranch`.quiet().nothrow();
+      const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
       return result.stdout.toString().trim() === "main";
     },
     linux: async () => {
@@ -149,19 +136,14 @@ export const tools: Tool[] = [
     check: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return false;
       const result = await $`${fnmBin()} ls`.quiet().nothrow();
-      return (
-        result.exitCode === 0 && result.stdout.toString().trim().length > 0
-      );
+      return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
     },
     linux: async () => {
       await $`curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell`;
       await $`${FNM} install --lts`;
       await $`${FNM} default lts-latest`;
       return {
-        profile: [
-          'export PATH="$HOME/.local/share/fnm:$PATH"',
-          'eval "$(fnm env --use-on-cd)"',
-        ],
+        profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
       };
     },
     darwin: async () => {
@@ -169,10 +151,7 @@ export const tools: Tool[] = [
       await $`${FNM} install --lts`;
       await $`${FNM} default lts-latest`;
       return {
-        profile: [
-          'export PATH="$HOME/.local/share/fnm:$PATH"',
-          'eval "$(fnm env --use-on-cd)"',
-        ],
+        profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
       };
     },
     windows: async () => {
@@ -218,9 +197,7 @@ export const tools: Tool[] = [
     name: "Go",
     bin: "go",
     linux: async () => {
-      const version = (
-        await $`curl -fsSL ${"https://go.dev/VERSION?m=text"}`.text()
-      )
+      const version = (await $`curl -fsSL ${"https://go.dev/VERSION?m=text"}`.text())
         .trim()
         .split("\n")[0];
       const arch = process.arch === "x64" ? "amd64" : "arm64";
@@ -258,9 +235,7 @@ export const tools: Tool[] = [
 
   {
     name: "Google Cloud SDK",
-    check: async () =>
-      has("gcloud") ||
-      (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
+    check: async () => has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
     linux: async () => {
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
     },
@@ -297,8 +272,7 @@ export const tools: Tool[] = [
 
   {
     name: "Claude Code",
-    check: async () =>
-      has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
+    check: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
     linux: async () => {
       await $`curl -fsSL https://claude.ai/install.sh | bash`;
     },
@@ -327,17 +301,11 @@ export const tools: Tool[] = [
     linux: async () => {
       await $`git config --global core.editor "code --wait"`;
 
-      const lines = [
-        'export EDITOR="code --wait"',
-        'export VISUAL="code --wait"',
-      ];
+      const lines = ['export EDITOR="code --wait"', 'export VISUAL="code --wait"'];
 
-      const winUser = (
-        await $`cmd.exe /c "echo %USERNAME%"`.text()
-      ).trim().replace(/\r/g, "");
+      const winUser = (await $`cmd.exe /c "echo %USERNAME%"`.text()).trim().replace(/\r/g, "");
       const chrome = `/mnt/c/Users/${winUser}/AppData/Local/Google/Chrome/Application/chrome.exe`;
-      const edge =
-        "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
+      const edge = "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 
       if (await fileExists(chrome)) {
         log.done("BROWSER set to Chrome");
