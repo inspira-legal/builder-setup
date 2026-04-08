@@ -48,6 +48,7 @@ export const installs: Tool[] = [
     },
     linux: async () => {
       await $`sudo apt update && sudo apt upgrade -y`.quiet();
+      await $`sudo apt install -y unzip`.quiet();
     },
     darwin: async () => {
       if (!has("brew")) {
@@ -62,6 +63,12 @@ export const installs: Tool[] = [
   {
     name: "Git",
     bin: "git",
+    linux: async () => {
+      await $`sudo apt install -y git`.quiet();
+    },
+    darwin: async () => {
+      await $`brew install git`.quiet();
+    },
     windows: async () => {
       await $`powershell -NoProfile -Command "winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements"`.quiet();
     },
