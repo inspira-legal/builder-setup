@@ -92,13 +92,6 @@ async function main() {
           log.info(`Atualizado ${profilePath}`);
         }
 
-        // Verify binary is actually available after install
-        if (tool.bin && !Bun.which(tool.bin)) {
-          log.warn(
-            `${tool.name} instalado mas "${tool.bin}" não encontrado no PATH. Disponível após reiniciar o terminal.`,
-          );
-        }
-
         log.done(tool.name);
       } catch (err) {
         const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
