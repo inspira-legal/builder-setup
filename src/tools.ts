@@ -15,6 +15,8 @@ import {
 
 const FNM_DIR = `${HOME}/.local/share/fnm`;
 const FNM = `${FNM_DIR}/fnm`;
+const PYENV_ROOT = `${HOME}/.pyenv`;
+const PYENV = `${PYENV_ROOT}/bin/pyenv`;
 
 // ── Shared helpers ──
 
@@ -242,14 +244,34 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   },
 
   {
-    name: "Python",
-    check: async () => (process.platform === "win32" ? has("python") : has("python3")),
-    test: process.platform === "win32" ? "python --version" : "python3 --version",
+    name: "pyenv",
+    test: "pyenv --version",
+    check: async () => has("pyenv") || (await fileExists(PYENV)),
     linux: async () => {
-      await $`sudo apt install -y python3`;
+      await $`sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev`;
+      await $`curl -fsSL https://pyenv.run | bash`;
     },
     darwin: async () => {
-      await $`uv python install`;
+      await $`brew install pyenv`;
+    },
+  },
+
+  {
+    name: "Python",
+    check: async () => {
+      if (process.platform === "win32") return has("python");
+      if (!has("pyenv") && !(await fileExists(PYENV))) return true;
+      const result = await $`pyenv versions`.quiet().nothrow();
+      return result.exitCode === 0 && /\d+\.\d+/.test(result.stdout.toString());
+    },
+    test: process.platform === "win32" ? "python --version" : "python3 --version",
+    linux: async () => {
+      await $`pyenv install -s 3`;
+      await $`pyenv global 3`;
+    },
+    darwin: async () => {
+      await $`pyenv install -s 3`;
+      await $`pyenv global 3`;
     },
     windows: async () => {
       await winget("Python.Python.3.14");
@@ -355,6 +377,24 @@ export const setups: Tool[] = [
     }),
     darwin: async () => ({
       profile: ['eval "$(fnm env --use-on-cd)"'],
+    }),
+  },
+
+  {
+    name: "pyenv profile",
+    check: async () => {
+      if (!has("pyenv") && !(await fileExists(PYENV))) return true;
+      return fileContains(getProfilePath(), 'eval "$(pyenv init');
+    },
+    linux: async () => ({
+      profile: [
+        'export PYENV_ROOT="$HOME/.pyenv"',
+        '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"',
+        'eval "$(pyenv init -)"',
+      ],
+    }),
+    darwin: async () => ({
+      profile: ['eval "$(pyenv init -)"'],
     }),
   },
 
