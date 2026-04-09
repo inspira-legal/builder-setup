@@ -104,17 +104,37 @@ async function main() {
   // Stop sudo keep-alive
   if (sudoKeepAlive) clearInterval(sudoKeepAlive);
 
+  // Verification
+  const R = "\x1b[31m";
+  const DIM = "\x1b[2m";
+  const testable = installs.filter((t) => t.test && getInstaller(t, platform));
+  const verifyFailed: string[] = [];
+
+  if (testable.length > 0) {
+    console.log(`\n  ${B}Verificação${N}`);
+    for (const tool of testable) {
+      const [cmd, ...args] = tool.test!.split(" ");
+      try {
+        const proc = Bun.spawn([cmd, ...args], { stdout: "pipe", stderr: "pipe" });
+        const stdout = (await new Response(proc.stdout).text()).trim();
+        const exitCode = await proc.exited;
+        if (exitCode === 0 && stdout.length > 0) {
+          const version = stdout.split("\n")[0].trim();
+          console.log(`  ${G}✔${N}  ${tool.name.padEnd(20)} ${DIM}${version}${N}`);
+        } else {
+          throw new Error("non-zero exit");
+        }
+      } catch {
+        console.log(`  ${R}✘${N}  ${tool.name}`);
+        verifyFailed.push(tool.name);
+      }
+    }
+  }
+
   // Completion
   console.log("");
 
-  if (executed === 0 && failed.length === 0) {
-    log.info("Tudo já está instalado e configurado. ✔");
-    process.exit(0);
-  }
-
   if (failed.length > 0) {
-    const R = "\x1b[31m";
-    const DIM = "\x1b[2m";
     console.log(`${R}========================================${N}`);
     console.log(`${R}  Algumas ferramentas falharam:          ${N}`);
     for (const { name, output } of failed) {
@@ -126,7 +146,20 @@ async function main() {
     console.log(`${R}========================================${N}`);
     console.log("");
     log.info("Corrija os problemas acima e rode builder-setup novamente.");
+  }
+
+  if (verifyFailed.length > 0) {
+    for (const name of verifyFailed) {
+      log.warn(`Desinstale ${name} e rode builder-setup novamente.`);
+    }
+  }
+
+  if (failed.length > 0 || verifyFailed.length > 0) {
     process.exit(1);
+  }
+
+  if (executed === 0) {
+    log.info("Tudo já está instalado e configurado.");
   }
 
   console.log(`${G}========================================${N}`);

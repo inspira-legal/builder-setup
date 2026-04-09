@@ -74,6 +74,7 @@ export const installs: Tool[] = [
   {
     name: "Git",
     bin: "git",
+    test: "git --version",
     linux: async () => {
       await $`sudo apt install -y git`.quiet();
     },
@@ -88,6 +89,7 @@ export const installs: Tool[] = [
   {
     name: "Docker",
     bin: "docker",
+    test: "docker --version",
     linux: async () => {
       if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
         await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
@@ -106,6 +108,7 @@ export const installs: Tool[] = [
   {
     name: "GitHub CLI",
     bin: "gh",
+    test: "gh --version",
     linux: async () => {
       await $`sudo mkdir -p -m 755 /etc/apt/keyrings`.quiet();
       await $`curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null`.quiet();
@@ -138,6 +141,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "fnm",
+    test: "fnm --version",
     check: async () => has("fnm") || (await fileExists(FNM)),
     linux: async () => {
       await $`curl -fsSL https://fnm.vercel.app/install | bash`.quiet();
@@ -152,6 +156,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Node.js",
+    test: "node --version",
     check: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
       const result = await $`fnm ls`.quiet().nothrow();
@@ -174,6 +179,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   {
     name: "Bun",
     bin: "bun",
+    test: "bun --version",
     linux: async () => {
       await $`curl -fsSL https://bun.com/install | bash`.quiet();
     },
@@ -188,6 +194,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   {
     name: "pnpm",
     bin: "pnpm",
+    test: "pnpm --version",
     linux: async () => {
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
     },
@@ -202,6 +209,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   {
     name: "Go",
     bin: "go",
+    test: "go version",
     linux: async () => {
       const version = (await $`curl -fsSL ${"https://go.dev/VERSION?m=text"}`.text())
         .trim()
@@ -224,6 +232,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   {
     name: "uv",
     bin: "uv",
+    test: "uv --version",
     linux: async () => {
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
     },
@@ -241,6 +250,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Google Cloud SDK",
+    test: "gcloud --version",
     check: async () => has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
     linux: async () => {
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
@@ -256,6 +266,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   {
     name: "VS Code",
     bin: "code",
+    test: "code --version",
     linux: async () => {
       await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
       await $`sudo chmod go+r /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
@@ -282,6 +293,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 
   {
     name: "Claude Code",
+    test: "claude --version",
     check: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
     linux: async () => {
       await $`curl -fsSL https://claude.ai/install.sh | bash`.quiet();

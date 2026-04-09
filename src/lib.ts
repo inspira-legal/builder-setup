@@ -14,6 +14,8 @@ export interface Tool {
   bin?: string;
   /** Custom check — return true if already installed/configured. Overrides bin. */
   check?: () => Promise<boolean>;
+  /** Command to verify installation, e.g. "git --version". First stdout line is shown as version. */
+  test?: string;
   darwin?: () => Promise<InstallerResult>;
   linux?: () => Promise<InstallerResult>;
   windows?: () => Promise<InstallerResult>;
