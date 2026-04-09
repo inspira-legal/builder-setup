@@ -90,7 +90,8 @@ async function main() {
         await refreshPath();
       } catch (err) {
         const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
-        const output = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
+        const raw = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
+        const output = raw.replace(/^bun: /gm, "");
         log.error(tool.name);
         failed.push({ name: tool.name, output });
       }
