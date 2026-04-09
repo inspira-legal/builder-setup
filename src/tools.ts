@@ -25,7 +25,7 @@ async function winget(id: string) {
       "-Command",
       `winget install -e --id ${id} --accept-source-agreements --accept-package-agreements --silent`,
     ],
-    { stdout: "pipe", stderr: "pipe" },
+    { stdout: "inherit", stderr: "inherit" },
   );
 
   const timeout = setTimeout(() => proc.kill(), 5 * 60_000);
@@ -33,25 +33,30 @@ async function winget(id: string) {
   clearTimeout(timeout);
 
   if (exitCode !== 0) {
-    const stderr = await new Response(proc.stderr).text();
-    throw new Error(`winget install ${id} falhou (exit ${exitCode})\n${stderr}`);
+    throw new Error(`winget install ${id} falhou (exit ${exitCode})`);
   }
 }
 
 async function installDockerApt() {
+  await $`sudo apt install -y ca-certificates curl`;
   await $`sudo install -m 0755 -d /etc/apt/keyrings`.quiet();
-  await $`curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /tmp/docker.asc`.quiet();
-  await $`sudo cp /tmp/docker.asc /etc/apt/keyrings/docker.asc`.quiet();
+  await $`sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc`.quiet();
   await $`sudo chmod a+r /etc/apt/keyrings/docker.asc`.quiet();
 
   const arch = (await $`dpkg --print-architecture`.text()).trim();
-  const codename = (await $`bash -c '. /etc/os-release && echo $VERSION_CODENAME'`.text()).trim();
-  const repo = `deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${codename} stable`;
-  await Bun.write("/tmp/docker.list", repo + "\n");
-  await $`sudo cp /tmp/docker.list /etc/apt/sources.list.d/docker.list`.quiet();
+  const script = '. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}"';
+  const codename = (await $`bash -c ${script}`.text()).trim();
+  const sources = `Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${codename}
+Components: stable
+Architectures: ${arch}
+Signed-By: /etc/apt/keyrings/docker.asc`;
+  await Bun.write("/tmp/docker.sources", sources + "\n");
+  await $`sudo cp /tmp/docker.sources /etc/apt/sources.list.d/docker.sources`.quiet();
 
-  await $`sudo apt update`.quiet();
-  await $`sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`.quiet();
+  await $`sudo apt update`;
+  await $`sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`;
   await $`sudo systemctl enable --now docker`.quiet().nothrow();
 
   const groups = await $`groups`.text();
@@ -70,11 +75,11 @@ export const installs: Tool[] = [
       return false;
     },
     linux: async () => {
-      await $`sudo apt update`.quiet();
+      await $`sudo apt update`;
     },
     darwin: async () => {
       if (!has("brew")) {
-        await $`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.quiet();
+        await $`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`;
       }
     },
   },
@@ -83,7 +88,7 @@ export const installs: Tool[] = [
     name: "unzip",
     bin: "unzip",
     linux: async () => {
-      await $`sudo apt install -y unzip`.quiet();
+      await $`sudo apt install -y unzip`;
     },
   },
 
@@ -92,10 +97,10 @@ export const installs: Tool[] = [
     bin: "git",
     test: "git --version",
     linux: async () => {
-      await $`sudo apt install -y git`.quiet();
+      await $`sudo apt install -y git`;
     },
     darwin: async () => {
-      await $`brew install git`.quiet();
+      await $`brew install git`;
     },
     windows: async () => {
       await winget("Git.Git");
@@ -114,7 +119,7 @@ export const installs: Tool[] = [
       await installDockerApt();
     },
     darwin: async () => {
-      await $`brew install --cask docker-desktop`.quiet();
+      await $`brew install --cask docker-desktop`;
     },
     windows: async () => {
       await winget("Docker.DockerDesktop");
@@ -140,11 +145,11 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await Bun.write("/tmp/github-cli.sources", sources + "\n");
       await $`sudo cp /tmp/github-cli.sources /etc/apt/sources.list.d/github-cli.sources`.quiet();
 
-      await $`sudo apt update`.quiet();
-      await $`sudo apt install -y gh`.quiet();
+      await $`sudo apt update`;
+      await $`sudo apt install -y gh`;
     },
     darwin: async () => {
-      await $`brew install gh`.quiet();
+      await $`brew install gh`;
     },
     windows: async () => {
       await winget("GitHub.cli");
@@ -160,10 +165,10 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     test: "fnm --version",
     check: async () => has("fnm") || (await fileExists(FNM)),
     linux: async () => {
-      await $`curl -fsSL https://fnm.vercel.app/install | bash`.quiet();
+      await $`curl -fsSL https://fnm.vercel.app/install | bash`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://fnm.vercel.app/install | bash`.quiet();
+      await $`brew install fnm`;
     },
     windows: async () => {
       await winget("Schniz.fnm");
@@ -178,16 +183,16 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
     },
     linux: async () => {
-      await $`fnm install --lts`.quiet();
-      await $`fnm default lts-latest`.quiet();
+      await $`fnm install --lts`;
+      await $`fnm default lts-latest`;
     },
     darwin: async () => {
-      await $`fnm install --lts`.quiet();
-      await $`fnm default lts-latest`.quiet();
+      await $`fnm install --lts`;
+      await $`fnm default lts-latest`;
     },
     windows: async () => {
-      await $`fnm install --lts`.quiet();
-      await $`fnm default lts-latest`.quiet();
+      await $`fnm install --lts`;
+      await $`fnm default lts-latest`;
     },
   },
 
@@ -196,13 +201,13 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     bin: "bun",
     test: "bun --version",
     linux: async () => {
-      await $`curl -fsSL https://bun.com/install | bash`.quiet();
+      await $`curl -fsSL https://bun.com/install | bash`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://bun.com/install | bash`.quiet();
+      await $`curl -fsSL https://bun.com/install | bash`;
     },
     windows: async () => {
-      await winget("Oven-sh.Bun");
+      await $`powershell -NoProfile -Command "irm bun.sh/install.ps1 | iex"`;
     },
   },
 
@@ -211,10 +216,10 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     bin: "pnpm",
     test: "pnpm --version",
     linux: async () => {
-      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
+      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`.quiet();
+      await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`;
     },
     windows: async () => {
       await winget("pnpm.pnpm");
@@ -230,14 +235,14 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
         .trim()
         .split("\n")[0];
       const arch = process.arch === "x64" ? "amd64" : "arm64";
-      await $`curl -fsSL https://go.dev/dl/${version}.linux-${arch}.tar.gz -o /tmp/go.tar.gz`.quiet();
-      await $`sudo rm -rf /usr/local/go`.quiet();
-      await $`sudo tar -C /usr/local -xzf /tmp/go.tar.gz`.quiet();
-      await $`rm /tmp/go.tar.gz`.quiet();
+      await $`curl -fsSL https://go.dev/dl/${version}.linux-${arch}.tar.gz -o /tmp/go.tar.gz`;
+      await $`sudo rm -rf /usr/local/go`;
+      await $`sudo tar -C /usr/local -xzf /tmp/go.tar.gz`;
+      await $`rm /tmp/go.tar.gz`;
       return { profile: ['export PATH="/usr/local/go/bin:$PATH"'] };
     },
     darwin: async () => {
-      await $`brew install go`.quiet();
+      await $`brew install go`;
     },
     windows: async () => {
       await winget("GoLang.Go");
@@ -249,10 +254,10 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     bin: "uv",
     test: "uv --version",
     linux: async () => {
-      await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
+      await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
     },
     darwin: async () => {
-      await $`curl -LsSf https://astral.sh/uv/install.sh | sh`.quiet();
+      await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
     },
     windows: async () => {
       await winget("astral-sh.uv");
@@ -264,13 +269,13 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     check: async () => (process.platform === "win32" ? has("python") : has("python3")),
     test: process.platform === "win32" ? "python --version" : "python3 --version",
     linux: async () => {
-      await $`sudo apt install -y python3`.quiet();
+      await $`sudo apt install -y python3`;
     },
     darwin: async () => {
-      await $`brew install python`.quiet();
+      await $`brew install python`;
     },
     windows: async () => {
-      await winget("Python.Python.3.13");
+      await winget("Python.Python.3.14");
     },
   },
 
@@ -283,10 +288,10 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     test: "gcloud --version",
     check: async () => has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
     linux: async () => {
-      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
+      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`.quiet();
+      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
     },
     windows: async () => {
       await winget("Google.CloudSDK");
@@ -295,10 +300,14 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "VS Code",
-    bin: "code",
     test: "code --version",
+    check: async () => {
+      // On WSL, VS Code comes from Windows via PATH interop
+      if (isWSL()) return true;
+      return has("code");
+    },
     linux: async () => {
-      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
+      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
       await $`sudo chmod go+r /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
 
       const sources = `Types: deb
@@ -310,11 +319,11 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await Bun.write("/tmp/vscode.sources", sources + "\n");
       await $`sudo cp /tmp/vscode.sources /etc/apt/sources.list.d/vscode.sources`.quiet();
 
-      await $`sudo apt update`.quiet();
-      await $`sudo apt install -y code`.quiet();
+      await $`sudo apt update`;
+      await $`sudo apt install -y code`;
     },
     darwin: async () => {
-      await $`brew install --cask visual-studio-code`.quiet();
+      await $`brew install --cask visual-studio-code`;
     },
     windows: async () => {
       await winget("Microsoft.VisualStudioCode");
@@ -326,13 +335,13 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
     test: "claude --version",
     check: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
     linux: async () => {
-      await $`curl -fsSL https://claude.ai/install.sh | bash`.quiet();
+      await $`curl -fsSL https://claude.ai/install.sh | bash`;
     },
     darwin: async () => {
-      await $`curl -fsSL https://claude.ai/install.sh | bash`.quiet();
+      await $`curl -fsSL https://claude.ai/install.sh | bash`;
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`.quiet();
+      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
     },
   },
 ];
@@ -368,7 +377,7 @@ export const setups: Tool[] = [
       profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
     }),
     darwin: async () => ({
-      profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
+      profile: ['eval "$(fnm env --use-on-cd)"'],
     }),
   },
 
