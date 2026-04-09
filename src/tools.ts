@@ -227,29 +227,6 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   },
 
   {
-    name: "Go",
-    bin: "go",
-    test: "go version",
-    linux: async () => {
-      const version = (await $`curl -fsSL ${"https://go.dev/VERSION?m=text"}`.text())
-        .trim()
-        .split("\n")[0];
-      const arch = process.arch === "x64" ? "amd64" : "arm64";
-      await $`curl -fsSL https://go.dev/dl/${version}.linux-${arch}.tar.gz -o /tmp/go.tar.gz`;
-      await $`sudo rm -rf /usr/local/go`;
-      await $`sudo tar -C /usr/local -xzf /tmp/go.tar.gz`;
-      await $`rm /tmp/go.tar.gz`;
-      return { profile: ['export PATH="/usr/local/go/bin:$PATH"'] };
-    },
-    darwin: async () => {
-      await $`brew install go`;
-    },
-    windows: async () => {
-      await winget("GoLang.Go");
-    },
-  },
-
-  {
     name: "uv",
     bin: "uv",
     test: "uv --version",
@@ -272,7 +249,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`sudo apt install -y python3`;
     },
     darwin: async () => {
-      await $`brew install python`;
+      await $`uv python install`;
     },
     windows: async () => {
       await winget("Python.Python.3.14");
