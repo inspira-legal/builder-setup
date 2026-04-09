@@ -156,7 +156,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Node.js",
-    test: "node --version",
+    test: "fnm exec -- node --version",
     check: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
       const result = await $`fnm ls`.quiet().nothrow();
