@@ -10,12 +10,10 @@ export type InstallerResult = void | { profile: string[] };
 
 export interface Tool {
   name: string;
-  /** Binary name to check via Bun.which(). Skips install if found. */
-  bin?: string;
-  /** Custom check — return true if already installed/configured. Overrides bin. */
-  check?: () => Promise<boolean>;
-  /** Command to verify installation, e.g. "git --version". First stdout line is shown as version. */
-  test?: string;
+  /** Return true to skip install (already installed/configured). */
+  shouldSkip?: () => Promise<boolean>;
+  /** Verify installation after install. Return version string on success, null on failure. */
+  verify?: () => Promise<string | null>;
   darwin?: () => Promise<InstallerResult>;
   linux?: () => Promise<InstallerResult>;
   windows?: () => Promise<InstallerResult>;

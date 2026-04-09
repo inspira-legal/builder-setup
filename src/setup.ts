@@ -20,8 +20,7 @@ function getInstaller(
 }
 
 async function isInstalled(tool: Tool): Promise<boolean> {
-  if (tool.check) return tool.check();
-  if (tool.bin) return Bun.which(tool.bin) !== null;
+  if (tool.shouldSkip) return tool.shouldSkip();
   return false;
 }
 
@@ -109,24 +108,16 @@ async function main() {
   const DIM = "\x1b[2m";
   const verifyFailed: string[] = [];
 
-  const testable = installs.filter((t) => t.test && getInstaller(t, platform));
+  const verifiable = installs.filter((t) => t.verify && getInstaller(t, platform));
 
-  if (testable.length > 0) {
+  if (verifiable.length > 0) {
     console.log(`\n  ${B}Verificação${N}`);
 
-    for (const tool of testable) {
-      const [cmd, ...args] = tool.test!.split(" ");
-      try {
-        const proc = Bun.spawn([cmd, ...args], { stdout: "pipe", stderr: "pipe" });
-        const stdout = (await new Response(proc.stdout).text()).trim();
-        const exitCode = await proc.exited;
-        if (exitCode === 0 && stdout.length > 0) {
-          const version = stdout.split("\n")[0].trim();
-          console.log(`  ${G}✔${N}  ${tool.name.padEnd(20)} ${DIM}${version}${N}`);
-        } else {
-          throw new Error("non-zero exit");
-        }
-      } catch {
+    for (const tool of verifiable) {
+      const result = await tool.verify!();
+      if (result) {
+        console.log(`  ${G}✔${N}  ${tool.name.padEnd(20)} ${DIM}${result}${N}`);
+      } else {
         console.log(`  ${R}✘${N}  ${tool.name}`);
         verifyFailed.push(tool.name);
       }

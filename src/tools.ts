@@ -18,7 +18,19 @@ const FNM = `${FNM_DIR}/fnm`;
 const PYENV_ROOT = `${HOME}/.pyenv`;
 const PYENV = `${PYENV_ROOT}/bin/pyenv`;
 
-// ── Shared helpers ──
+// ── Helpers ──
+
+async function version(cmd: string, ...args: string[]): Promise<string | null> {
+  try {
+    const proc = Bun.spawn([cmd, ...args], { stdout: "pipe", stderr: "pipe" });
+    const stdout = (await new Response(proc.stdout).text()).trim();
+    const exitCode = await proc.exited;
+    if (exitCode === 0 && stdout.length > 0) return stdout.split("\n")[0].trim();
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 async function winget(id: string) {
   const proc = Bun.spawn(
@@ -72,7 +84,7 @@ Signed-By: /etc/apt/keyrings/docker.asc`;
 export const installs: Tool[] = [
   {
     name: "System packages",
-    check: async () => {
+    shouldSkip: async () => {
       if (process.platform === "darwin") return has("brew");
       return false;
     },
@@ -88,7 +100,7 @@ export const installs: Tool[] = [
 
   {
     name: "unzip",
-    bin: "unzip",
+    shouldSkip: async () => has("unzip"),
     linux: async () => {
       await $`sudo apt install -y unzip`;
     },
@@ -96,8 +108,8 @@ export const installs: Tool[] = [
 
   {
     name: "Git",
-    bin: "git",
-    test: "git --version",
+    shouldSkip: async () => has("git"),
+    verify: async () => version("git", "--version"),
     linux: async () => {
       await $`sudo apt install -y git`;
     },
@@ -111,8 +123,8 @@ export const installs: Tool[] = [
 
   {
     name: "Docker",
-    bin: "docker",
-    test: "docker --version",
+    shouldSkip: async () => has("docker"),
+    verify: async () => version("docker", "--version"),
     linux: async () => {
       if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
         await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
@@ -130,8 +142,8 @@ export const installs: Tool[] = [
 
   {
     name: "GitHub CLI",
-    bin: "gh",
-    test: "gh --version",
+    shouldSkip: async () => has("gh"),
+    verify: async () => version("gh", "--version"),
     linux: async () => {
       await $`sudo mkdir -p -m 755 /etc/apt/keyrings`.quiet();
       await $`curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null`.quiet();
@@ -164,8 +176,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "fnm",
-    test: "fnm --version",
-    check: async () => has("fnm") || (await fileExists(FNM)),
+    verify: async () => version("fnm", "--version"),
+    shouldSkip: async () => has("fnm") || (await fileExists(FNM)),
     linux: async () => {
       await $`curl -fsSL https://fnm.vercel.app/install | bash`;
     },
@@ -179,7 +191,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Node.js",
-    check: async () => {
+    verify: async () => version("node", "--version"),
+    shouldSkip: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
       const result = await $`fnm ls`.quiet().nothrow();
       return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
@@ -200,8 +213,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Bun",
-    bin: "bun",
-    test: "bun --version",
+    shouldSkip: async () => has("bun"),
+    verify: async () => version("bun", "--version"),
     linux: async () => {
       await $`curl -fsSL https://bun.com/install | bash`;
     },
@@ -215,8 +228,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "pnpm",
-    bin: "pnpm",
-    test: "pnpm --version",
+    shouldSkip: async () => has("pnpm"),
+    verify: async () => version("pnpm", "--version"),
     linux: async () => {
       await $`curl -fsSL https://get.pnpm.io/install.sh | sh -`;
     },
@@ -230,8 +243,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "uv",
-    bin: "uv",
-    test: "uv --version",
+    shouldSkip: async () => has("uv"),
+    verify: async () => version("uv", "--version"),
     linux: async () => {
       await $`curl -LsSf https://astral.sh/uv/install.sh | sh`;
     },
@@ -245,8 +258,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "pyenv",
-    test: "pyenv --version",
-    check: async () => has("pyenv") || (await fileExists(PYENV)),
+    verify: async () => version("pyenv", "--version"),
+    shouldSkip: async () => has("pyenv") || (await fileExists(PYENV)),
     linux: async () => {
       await $`sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev`;
       await $`curl -fsSL https://pyenv.run | bash`;
@@ -258,23 +271,23 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Python",
-    check: async () => {
+    shouldSkip: async () => {
       if (process.platform === "win32") return has("python");
       if (!has("pyenv") && !(await fileExists(PYENV))) return true;
       const result = await $`pyenv versions`.quiet().nothrow();
       return result.exitCode === 0 && /\d+\.\d+/.test(result.stdout.toString());
     },
-    test: process.platform === "win32" ? "python --version" : "python3 --version",
+    verify: async () => version(process.platform === "win32" ? "python" : "python3", "--version"),
     linux: async () => {
-      await $`pyenv install -s 3`;
-      await $`pyenv global 3`;
+      await $`pyenv install -s 3.13`;
+      await $`pyenv global 3.13`;
     },
     darwin: async () => {
-      await $`pyenv install -s 3`;
-      await $`pyenv global 3`;
+      await $`pyenv install -s 3.13`;
+      await $`pyenv global 3.13`;
     },
     windows: async () => {
-      await winget("Python.Python.3.14");
+      await winget("Python.Python.3.13");
     },
   },
 
@@ -284,8 +297,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Google Cloud SDK",
-    test: "gcloud --version",
-    check: async () => has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
+    verify: async () => version("gcloud", "--version"),
+    shouldSkip: async () =>
+      has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
     linux: async () => {
       await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
     },
@@ -299,8 +313,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "VS Code",
-    test: "code --version",
-    check: async () => {
+    verify: async () => version("code", "--version"),
+    shouldSkip: async () => {
       // On WSL, VS Code comes from Windows via PATH interop
       if (isWSL()) return true;
       return has("code");
@@ -331,8 +345,8 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 
   {
     name: "Claude Code",
-    test: "claude --version",
-    check: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
+    verify: async () => version("claude", "--version"),
+    shouldSkip: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
     linux: async () => {
       await $`curl -fsSL https://claude.ai/install.sh | bash`;
     },
@@ -350,7 +364,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 export const setups: Tool[] = [
   {
     name: "Git config",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("git")) return true;
       const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
       return result.stdout.toString().trim() === "main";
@@ -368,7 +382,7 @@ export const setups: Tool[] = [
 
   {
     name: "fnm profile",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
       return fileContains(getProfilePath(), 'eval "$(fnm env');
     },
@@ -382,7 +396,7 @@ export const setups: Tool[] = [
 
   {
     name: "pyenv profile",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("pyenv") && !(await fileExists(PYENV))) return true;
       return fileContains(getProfilePath(), 'eval "$(pyenv init');
     },
@@ -400,7 +414,7 @@ export const setups: Tool[] = [
 
   {
     name: "fnm PowerShell",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("fnm")) return true;
       const ps5 = `${HOME}\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`;
       const ps7 = `${HOME}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1`;
@@ -422,7 +436,7 @@ export const setups: Tool[] = [
 
   {
     name: "fnm Git Bash",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("fnm")) return true;
       return fileContains(`${HOME}/.bashrc`, "fnm env");
     },
@@ -438,7 +452,7 @@ export const setups: Tool[] = [
 
   {
     name: "fnm CMD",
-    check: async () => {
+    shouldSkip: async () => {
       if (!has("fnm")) return true;
       const cmdrc = `${HOME}\\cmdrc.bat`;
       if (!(await fileContains(cmdrc, "__FNM_SETUP"))) return false;
@@ -479,7 +493,7 @@ export const setups: Tool[] = [
 
   {
     name: "WSL config",
-    check: async () => {
+    shouldSkip: async () => {
       if (!isWSL()) return true;
       const profile = getProfilePath();
       return (
