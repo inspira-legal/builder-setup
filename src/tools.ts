@@ -334,11 +334,22 @@ export const setups: Tool[] = [
     name: "fnm PowerShell",
     check: async () => {
       if (!has("fnm")) return true;
-      return fileContains(getProfilePath(), "fnm env");
+      const ps5 = `${HOME}\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`;
+      const ps7 = `${HOME}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1`;
+      return (await fileContains(ps5, "fnm env")) && (await fileContains(ps7, "fnm env"));
     },
-    windows: async () => ({
-      profile: ["fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression"],
-    }),
+    windows: async () => {
+      const line = "fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression";
+      const ps5 = `${HOME}\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`;
+      const ps7 = `${HOME}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1`;
+
+      for (const profile of [ps5, ps7]) {
+        if (!(await fileContains(profile, "fnm env"))) {
+          await appendFile(profile, line);
+          log.info(`Atualizado ${profile}`);
+        }
+      }
+    },
   },
 
   {
@@ -362,7 +373,7 @@ export const setups: Tool[] = [
     check: async () => {
       if (!has("fnm")) return true;
       const cmdrc = `${HOME}\\cmdrc.bat`;
-      if (!(await fileContains(cmdrc, "fnm env"))) return false;
+      if (!(await fileContains(cmdrc, "__FNM_SETUP"))) return false;
       const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`
         .quiet()
         .nothrow();
@@ -370,10 +381,16 @@ export const setups: Tool[] = [
     },
     windows: async () => {
       const cmdrc = `${HOME}\\cmdrc.bat`;
-      const fnmLine = `@FOR /f "tokens=*" %%i IN ('fnm env --use-on-cd --shell cmd') DO @CALL %%i`;
+      // Guard prevents infinite recursion: FOR /f spawns a child cmd.exe,
+      // which triggers AutoRun → cmdrc.bat again. The guard breaks the cycle.
+      const content = [
+        "@IF DEFINED __FNM_SETUP EXIT /B",
+        "@SET __FNM_SETUP=1",
+        `@FOR /f "tokens=*" %%i IN ('fnm env --use-on-cd --shell cmd') DO @CALL %%i`,
+      ].join("\r\n");
 
-      if (!(await fileContains(cmdrc, "fnm env"))) {
-        await appendFile(cmdrc, fnmLine);
+      if (!(await fileContains(cmdrc, "__FNM_SETUP"))) {
+        await Bun.write(cmdrc, content + "\r\n");
         log.info(`Atualizado ${cmdrc}`);
       }
 
