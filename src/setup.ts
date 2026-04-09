@@ -109,13 +109,12 @@ async function main() {
   const DIM = "\x1b[2m";
   const verifyFailed: string[] = [];
 
-  const testableInstalls = installs.filter((t) => t.test && getInstaller(t, platform));
-  const testableSetups = setups.filter((t) => t.check && getInstaller(t, platform));
+  const testable = installs.filter((t) => t.test && getInstaller(t, platform));
 
-  if (testableInstalls.length > 0 || testableSetups.length > 0) {
+  if (testable.length > 0) {
     console.log(`\n  ${B}Verificação${N}`);
 
-    for (const tool of testableInstalls) {
+    for (const tool of testable) {
       const [cmd, ...args] = tool.test!.split(" ");
       try {
         const proc = Bun.spawn([cmd, ...args], { stdout: "pipe", stderr: "pipe" });
@@ -128,16 +127,6 @@ async function main() {
           throw new Error("non-zero exit");
         }
       } catch {
-        console.log(`  ${R}✘${N}  ${tool.name}`);
-        verifyFailed.push(tool.name);
-      }
-    }
-
-    for (const tool of testableSetups) {
-      const ok = await tool.check!();
-      if (ok) {
-        console.log(`  ${G}✔${N}  ${tool.name}`);
-      } else {
         console.log(`  ${R}✘${N}  ${tool.name}`);
         verifyFailed.push(tool.name);
       }
