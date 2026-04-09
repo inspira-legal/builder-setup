@@ -19,7 +19,23 @@ const FNM = `${FNM_DIR}/fnm`;
 // ── Shared helpers ──
 
 async function winget(id: string) {
-  await $`powershell.exe -Command "winget install -e --id ${id} --accept-source-agreements --accept-package-agreements"`.quiet();
+  const proc = Bun.spawn(
+    [
+      "powershell.exe",
+      "-Command",
+      `winget install -e --id ${id} --accept-source-agreements --accept-package-agreements --silent`,
+    ],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+
+  const timeout = setTimeout(() => proc.kill(), 5 * 60_000);
+  const exitCode = await proc.exited;
+  clearTimeout(timeout);
+
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text();
+    throw new Error(`winget install ${id} falhou (exit ${exitCode})\n${stderr}`);
+  }
 }
 
 async function installDockerApt() {
