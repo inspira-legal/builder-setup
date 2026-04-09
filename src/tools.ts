@@ -17,6 +17,23 @@ const FNM_DIR = `${HOME}/.local/share/fnm`;
 const FNM = `${FNM_DIR}/fnm`;
 const PYENV_ROOT = `${HOME}/.pyenv`;
 const PYENV = `${PYENV_ROOT}/bin/pyenv`;
+const LINUX_DEPS = [
+  "unzip",
+  "build-essential",
+  "libssl-dev",
+  "zlib1g-dev",
+  "libbz2-dev",
+  "libreadline-dev",
+  "libsqlite3-dev",
+  "curl",
+  "libncursesw5-dev",
+  "xz-utils",
+  "tk-dev",
+  "libxml2-dev",
+  "libxmlsec1-dev",
+  "libffi-dev",
+  "liblzma-dev",
+];
 
 // ── Helpers ──
 
@@ -99,10 +116,14 @@ export const installs: Tool[] = [
   },
 
   {
-    name: "unzip",
-    shouldSkip: async () => has("unzip"),
+    name: "Linux dependencies",
+    shouldSkip: async () => {
+      const pkgs = LINUX_DEPS;
+      const result = await $`dpkg -s ${pkgs}`.quiet().nothrow();
+      return result.exitCode === 0;
+    },
     linux: async () => {
-      await $`sudo apt install -y unzip`;
+      await $`sudo apt install -y ${LINUX_DEPS}`;
     },
   },
 
@@ -261,7 +282,6 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     verify: async () => version("pyenv", "--version"),
     shouldSkip: async () => has("pyenv") || (await fileExists(PYENV)),
     linux: async () => {
-      await $`sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev`;
       await $`curl -fsSL https://pyenv.run | bash`;
     },
     darwin: async () => {
