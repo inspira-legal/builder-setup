@@ -1,5 +1,4 @@
 import { $ } from "bun";
-import { existsSync } from "fs";
 import {
   type Tool,
   log,
@@ -50,7 +49,6 @@ async function installDockerApt() {
 export const installs: Tool[] = [
   {
     name: "System packages",
-    when: () => process.platform !== "win32",
     check: async () => {
       if (process.platform === "darwin") return has("brew");
       return false;
@@ -68,7 +66,6 @@ export const installs: Tool[] = [
   {
     name: "unzip",
     bin: "unzip",
-    when: () => process.platform === "linux",
     linux: async () => {
       await $`sudo apt install -y unzip`.quiet();
     },
@@ -155,8 +152,8 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Node.js",
-    when: () => has("fnm") || existsSync(FNM),
     check: async () => {
+      if (!has("fnm") && !(await fileExists(FNM))) return true;
       const result = await $`fnm ls`.quiet().nothrow();
       return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
     },
@@ -303,8 +300,8 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 export const setups: Tool[] = [
   {
     name: "Git config",
-    when: () => has("git"),
     check: async () => {
+      if (!has("git")) return true;
       const result = await $`git config --global init.defaultBranch`.quiet().nothrow();
       return result.stdout.toString().trim() === "main";
     },
@@ -321,8 +318,10 @@ export const setups: Tool[] = [
 
   {
     name: "fnm profile",
-    when: () => process.platform !== "win32" && (has("fnm") || existsSync(FNM)),
-    check: async () => fileContains(getProfilePath(), 'eval "$(fnm env'),
+    check: async () => {
+      if (!has("fnm") && !(await fileExists(FNM))) return true;
+      return fileContains(getProfilePath(), 'eval "$(fnm env');
+    },
     linux: async () => ({
       profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
     }),
@@ -333,8 +332,10 @@ export const setups: Tool[] = [
 
   {
     name: "fnm PowerShell",
-    when: () => process.platform === "win32" && has("fnm"),
-    check: async () => fileContains(getProfilePath(), "fnm env"),
+    check: async () => {
+      if (!has("fnm")) return true;
+      return fileContains(getProfilePath(), "fnm env");
+    },
     windows: async () => ({
       profile: ["fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression"],
     }),
@@ -342,8 +343,10 @@ export const setups: Tool[] = [
 
   {
     name: "fnm Git Bash",
-    when: () => process.platform === "win32" && has("fnm"),
-    check: async () => fileContains(`${HOME}/.bashrc`, "fnm env"),
+    check: async () => {
+      if (!has("fnm")) return true;
+      return fileContains(`${HOME}/.bashrc`, "fnm env");
+    },
     windows: async () => {
       const bashrc = `${HOME}/.bashrc`;
       const line = 'eval "$(fnm env --use-on-cd)"';
@@ -356,8 +359,8 @@ export const setups: Tool[] = [
 
   {
     name: "fnm CMD",
-    when: () => process.platform === "win32" && has("fnm"),
     check: async () => {
+      if (!has("fnm")) return true;
       const cmdrc = `${HOME}\\cmdrc.bat`;
       if (!(await fileContains(cmdrc, "fnm env"))) return false;
       const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`
@@ -391,8 +394,8 @@ export const setups: Tool[] = [
 
   {
     name: "WSL config",
-    when: () => isWSL(),
     check: async () => {
+      if (!isWSL()) return true;
       const profile = getProfilePath();
       return (
         (await fileContains(profile, 'export EDITOR="code --wait"')) &&

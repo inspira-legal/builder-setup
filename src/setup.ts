@@ -62,25 +62,17 @@ async function main() {
 
   const failed: { name: string; output: string }[] = [];
 
+  let executed = 0;
+
   async function runTools(tools: Tool[], verb: string) {
     for (const tool of tools) {
-      if (tool.when && !tool.when()) continue;
-
-      log.step(`Verificando ${tool.name}...`);
-
       const installer = getInstaller(tool, platform);
-      if (!installer) {
-        log.skip("não se aplica nesta plataforma");
-        continue;
-      }
+      if (!installer) continue;
 
-      if (await isInstalled(tool)) {
-        log.skip("já instalado");
-        continue;
-      }
+      if (await isInstalled(tool)) continue;
 
+      log.step(`${verb} ${tool.name}...`);
       try {
-        log.info(`${verb} ${tool.name}...`);
         const result = await installer();
 
         // Write profile lines if returned
@@ -94,6 +86,7 @@ async function main() {
         }
 
         log.done(tool.name);
+        executed++;
 
         await refreshPath();
       } catch (err) {
@@ -106,17 +99,18 @@ async function main() {
   }
 
   await runTools(installs, "Instalando");
-
-  const pendingSetups = setups.filter((t) => !t.when || t.when());
-  if (pendingSetups.length > 0) {
-    await runTools(pendingSetups, "Configurando");
-  }
+  await runTools(setups, "Configurando");
 
   // Stop sudo keep-alive
   if (sudoKeepAlive) clearInterval(sudoKeepAlive);
 
   // Completion
   console.log("");
+
+  if (executed === 0 && failed.length === 0) {
+    log.info("Tudo já está instalado e configurado. ✔");
+    process.exit(0);
+  }
 
   if (failed.length > 0) {
     const R = "\x1b[31m";

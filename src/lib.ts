@@ -14,8 +14,6 @@ export interface Tool {
   bin?: string;
   /** Custom check — return true if already installed/configured. Overrides bin. */
   check?: () => Promise<boolean>;
-  /** If provided, tool is skipped entirely (silently) when this returns false. */
-  when?: () => boolean;
   darwin?: () => Promise<InstallerResult>;
   linux?: () => Promise<InstallerResult>;
   windows?: () => Promise<InstallerResult>;
