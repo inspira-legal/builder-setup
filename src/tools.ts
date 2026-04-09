@@ -1,6 +1,16 @@
 import { $ } from "bun";
 import { existsSync } from "fs";
-import { type Tool, log, has, isWSL, getProfilePath, fileExists, fileContains, appendFile, HOME } from "./lib";
+import {
+  type Tool,
+  log,
+  has,
+  isWSL,
+  getProfilePath,
+  fileExists,
+  fileContains,
+  appendFile,
+  HOME,
+} from "./lib";
 
 // ── Constants ──
 
@@ -350,7 +360,9 @@ export const setups: Tool[] = [
     check: async () => {
       const cmdrc = `${HOME}\\cmdrc.bat`;
       if (!(await fileContains(cmdrc, "fnm env"))) return false;
-      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`.quiet().nothrow();
+      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`
+        .quiet()
+        .nothrow();
       return result.exitCode === 0 && result.stdout.toString().includes("cmdrc.bat");
     },
     windows: async () => {
@@ -362,7 +374,9 @@ export const setups: Tool[] = [
         log.info(`Atualizado ${cmdrc}`);
       }
 
-      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`.quiet().nothrow();
+      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`
+        .quiet()
+        .nothrow();
       if (result.exitCode !== 0) {
         await $`reg add "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun /t REG_SZ /d "${cmdrc}" /f`.quiet();
         log.info("AutoRun configurado no registro");

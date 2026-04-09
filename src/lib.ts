@@ -96,8 +96,12 @@ export async function fileContains(path: string, needle: string): Promise<boolea
 export async function refreshPath(): Promise<void> {
   if (process.platform === "win32") {
     const proc = Bun.spawn(
-      ["powershell.exe", "-NoProfile", "-Command",
-        "[Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')"],
+      [
+        "powershell.exe",
+        "-NoProfile",
+        "-Command",
+        "[Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')",
+      ],
       { stdout: "pipe", stderr: "pipe" },
     );
     process.env.PATH = (await new Response(proc.stdout).text()).trim();
