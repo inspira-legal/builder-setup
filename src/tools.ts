@@ -243,6 +243,21 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     },
   },
 
+  {
+    name: "Python",
+    check: async () => (process.platform === "win32" ? has("python") : has("python3")),
+    test: process.platform === "win32" ? "python --version" : "python3 --version",
+    linux: async () => {
+      await $`sudo apt install -y python3`.quiet();
+    },
+    darwin: async () => {
+      await $`brew install python`.quiet();
+    },
+    windows: async () => {
+      await winget("Python.Python.3.13");
+    },
+  },
+
   // ────────────────────────────────────────
   //  Cloud tools
   // ────────────────────────────────────────
