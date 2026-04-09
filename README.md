@@ -23,19 +23,23 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
 | System packages | ⬚ | ✅ | ✅ | ✅ |
-| unzip (dep de fnm e uv) | ⬚ | ⬚ | ✅ | ✅ |
+| Linux dependencies | ⬚ | ⬚ | ✅ | ✅ |
 | Git | ✅ | ✅ | ✅ | ✅ |
 | Docker | ✅ | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ | ✅ |
-| Node.js (fnm) | ✅ | ✅ | ✅ | ✅ |
+| fnm | ✅ | ✅ | ✅ | ✅ |
+| Node.js | ✅ | ✅ | ✅ | ✅ |
 | Bun | ✅ | ✅ | ✅ | ✅ |
 | pnpm | ✅ | ✅ | ✅ | ✅ |
-| Go | ✅ | ✅ | ✅ | ✅ |
 | uv | ✅ | ✅ | ✅ | ✅ |
+| pyenv | ⬚ | ✅ | ✅ | ✅ |
+| Python | ✅ | ✅ | ✅ | ✅ |
 | Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
-| VS Code | ✅ | ✅ | ✅ | ✅ |
+| VS Code | ✅ | ✅ | ✅ | ⬚ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ |
 | Git config | ✅ | ✅ | ✅ | ✅ |
+| fnm profile | ✅ | ✅ | ✅ | ✅ |
+| pyenv profile | ⬚ | ✅ | ✅ | ✅ |
 | WSL config (editor, browser) | ⬚ | ⬚ | ⬚ | ✅ |
 
 > ✅ suportado &nbsp; ⬚ não se aplica
