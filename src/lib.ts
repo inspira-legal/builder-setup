@@ -92,6 +92,22 @@ export async function fileContains(path: string, needle: string): Promise<boolea
   }
 }
 
+/** Refresh process.env.PATH so newly installed binaries are found by Bun.which() */
+export async function refreshPath(): Promise<void> {
+  if (process.platform === "win32") {
+    const proc = Bun.spawn(
+      ["powershell.exe", "-NoProfile", "-Command",
+        "[Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')"],
+      { stdout: "pipe", stderr: "pipe" },
+    );
+    process.env.PATH = (await new Response(proc.stdout).text()).trim();
+  } else {
+    const shell = process.env.SHELL ?? "/bin/bash";
+    const proc = Bun.spawn([shell, "-lc", "echo $PATH"], { stdout: "pipe", stderr: "pipe" });
+    process.env.PATH = (await new Response(proc.stdout).text()).trim();
+  }
+}
+
 /** Append a line to a file (creates if missing) */
 export async function appendFile(path: string, line: string): Promise<void> {
   let existing = "";

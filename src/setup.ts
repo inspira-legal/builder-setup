@@ -8,6 +8,7 @@ import {
   getProfilePath,
   fileContains,
   appendFile,
+  refreshPath,
   log,
 } from "./lib";
 
@@ -93,6 +94,8 @@ async function main() {
         }
 
         log.done(tool.name);
+
+        await refreshPath();
       } catch (err) {
         const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
         const output = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;

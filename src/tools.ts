@@ -1,5 +1,6 @@
 import { $ } from "bun";
-import { type Tool, log, has, isWSL, getProfilePath, fileExists, fileContains, HOME } from "./lib";
+import { existsSync } from "fs";
+import { type Tool, log, has, isWSL, getProfilePath, fileExists, fileContains, appendFile, HOME } from "./lib";
 
 // ── Constants ──
 
@@ -10,10 +11,6 @@ const FNM = `${FNM_DIR}/fnm`;
 
 async function winget(id: string) {
   await $`powershell.exe -Command "winget install -e --id ${id} --accept-source-agreements --accept-package-agreements"`.quiet();
-}
-
-function fnmBin(): string {
-  return has("fnm") ? "fnm" : FNM;
 }
 
 async function installDockerApt() {
@@ -133,30 +130,35 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   // ────────────────────────────────────────
 
   {
-    name: "Node.js (fnm)",
-    check: async () => {
-      if (!has("fnm") && !(await fileExists(FNM))) return false;
-      const result = await $`${fnmBin()} ls`.quiet().nothrow();
-      return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
-    },
+    name: "fnm",
+    check: async () => has("fnm") || (await fileExists(FNM)),
     linux: async () => {
-      await $`curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell`.quiet();
-      await $`${FNM} install --lts`.quiet();
-      await $`${FNM} default lts-latest`.quiet();
-      return {
-        profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
-      };
+      await $`curl -fsSL https://fnm.vercel.app/install | bash`.quiet();
     },
     darwin: async () => {
-      await $`curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell`.quiet();
-      await $`${FNM} install --lts`.quiet();
-      await $`${FNM} default lts-latest`.quiet();
-      return {
-        profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
-      };
+      await $`curl -fsSL https://fnm.vercel.app/install | bash`.quiet();
     },
     windows: async () => {
       await winget("Schniz.fnm");
+    },
+  },
+
+  {
+    name: "Node.js",
+    when: () => has("fnm") || existsSync(FNM),
+    check: async () => {
+      const result = await $`fnm ls`.quiet().nothrow();
+      return result.exitCode === 0 && result.stdout.toString().trim().length > 0;
+    },
+    linux: async () => {
+      await $`fnm install --lts`.quiet();
+      await $`fnm default lts-latest`.quiet();
+    },
+    darwin: async () => {
+      await $`fnm install --lts`.quiet();
+      await $`fnm default lts-latest`.quiet();
+    },
+    windows: async () => {
       await $`fnm install --lts`.quiet();
       await $`fnm default lts-latest`.quiet();
     },
@@ -304,6 +306,72 @@ export const setups: Tool[] = [
     },
     windows: async () => {
       await $`git config --global init.defaultBranch main`.quiet();
+    },
+  },
+
+  {
+    name: "fnm profile",
+    when: () => process.platform !== "win32" && (has("fnm") || existsSync(FNM)),
+    check: async () => fileContains(getProfilePath(), 'eval "$(fnm env'),
+    linux: async () => ({
+      profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
+    }),
+    darwin: async () => ({
+      profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
+    }),
+  },
+
+  {
+    name: "fnm PowerShell",
+    when: () => process.platform === "win32" && has("fnm"),
+    check: async () => fileContains(getProfilePath(), "fnm env"),
+    windows: async () => ({
+      profile: ["fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression"],
+    }),
+  },
+
+  {
+    name: "fnm Git Bash",
+    when: () => process.platform === "win32" && has("fnm"),
+    check: async () => fileContains(`${HOME}/.bashrc`, "fnm env"),
+    windows: async () => {
+      const bashrc = `${HOME}/.bashrc`;
+      const line = 'eval "$(fnm env --use-on-cd)"';
+      if (!(await fileContains(bashrc, line))) {
+        await appendFile(bashrc, line);
+      }
+      log.info(`Atualizado ${bashrc}`);
+    },
+  },
+
+  {
+    name: "fnm CMD",
+    when: () => process.platform === "win32" && has("fnm"),
+    check: async () => {
+      const cmdrc = `${HOME}\\cmdrc.bat`;
+      if (!(await fileContains(cmdrc, "fnm env"))) return false;
+      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`.quiet().nothrow();
+      return result.exitCode === 0 && result.stdout.toString().includes("cmdrc.bat");
+    },
+    windows: async () => {
+      const cmdrc = `${HOME}\\cmdrc.bat`;
+      const fnmLine = `@FOR /f "tokens=*" %%i IN ('fnm env --use-on-cd --shell cmd') DO @CALL %%i`;
+
+      if (!(await fileContains(cmdrc, "fnm env"))) {
+        await appendFile(cmdrc, fnmLine);
+        log.info(`Atualizado ${cmdrc}`);
+      }
+
+      const result = await $`reg query "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun`.quiet().nothrow();
+      if (result.exitCode !== 0) {
+        await $`reg add "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun /t REG_SZ /d "${cmdrc}" /f`.quiet();
+        log.info("AutoRun configurado no registro");
+      } else if (!result.stdout.toString().includes("cmdrc.bat")) {
+        const match = result.stdout.toString().match(/REG_SZ\s+(.*)/);
+        const existing = match?.[1]?.trim() ?? "";
+        await $`reg add "HKCU\\Software\\Microsoft\\Command Processor" /v AutoRun /t REG_SZ /d "${existing} & ${cmdrc}" /f`.quiet();
+        log.info("AutoRun atualizado no registro");
+      }
     },
   },
 
