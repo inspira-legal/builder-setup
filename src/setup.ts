@@ -12,6 +12,29 @@ import {
   log,
 } from "./lib";
 
+function printWelcomeBox() {
+  const B = "\x1b[1m";
+  const N = "\x1b[0m";
+
+  console.log("");
+  console.log("  +==========================================================+");
+  console.log(`  |          ${B}BUILDER'S SETUP - INSPIRA LEGAL${N}                 |`);
+  console.log("  +==========================================================+");
+  console.log("  |  ATENÇÃO: o setup ideal requer uma conta GitHub na       |");
+  console.log("  |  organização Inspira. Sem ela, você pode instalar as     |");
+  console.log("  |  ferramentas agora e regularizar a conta depois.         |");
+  console.log("  |                                                          |");
+  console.log("  |  Para criar/incluir conta:                               |");
+  console.log("  |    1. Crie em https://github.com/signup                  |");
+  console.log("  |    2. Solicite ao HOLANDA (suporte) a inclusão           |");
+  console.log("  |       da sua conta na organização Inspira                |");
+  console.log("  |                                                          |");
+  console.log("  |  No macOS o instalador pode pedir sua senha do           |");
+  console.log("  |  computador e abrir uma janela do Xcode (~5 min).        |");
+  console.log("  +----------------------------------------------------------+");
+  console.log("");
+}
+
 function getInstaller(
   tool: Tool,
   platform: Platform,
