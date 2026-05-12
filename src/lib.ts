@@ -62,7 +62,10 @@ const BOLD = "\x1b[1m";
 const NC = "\x1b[0m";
 
 export const log = {
-  step: (msg: string) => console.log(`\n${CYAN}==>${NC} ${BOLD}${msg}${NC}`),
+  step: (msg: string, progress?: { current: number; total: number }) => {
+    const prefix = progress ? `[${progress.current}/${progress.total}] ` : "";
+    console.log(`\n${CYAN}==>${NC} ${BOLD}${prefix}${msg}${NC}`);
+  },
   skip: (msg: string) => console.log(`    ${YELLOW}[PULAR]${NC} ${msg}`),
   done: (msg: string) => console.log(`    ${GREEN}[FEITO]${NC} ${msg}`),
   warn: (msg: string) => console.log(`    ${YELLOW}[AVISO]${NC} ${msg}`),
