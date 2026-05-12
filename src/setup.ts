@@ -122,22 +122,20 @@ async function isInstalled(tool: Tool): Promise<boolean> {
 
 async function main() {
   const platform = getPlatform();
-
   const wsl = isWSL();
   const profilePath = getProfilePath();
 
   const G = "\x1b[32m";
   const C = "\x1b[36m";
+  const Y = "\x1b[33m";
   const B = "\x1b[1m";
   const N = "\x1b[0m";
 
+  printWelcomeBox();
+  await pause("  Pressione Enter para iniciar (ou Ctrl+C para sair)...");
   console.log("");
-  console.log(`  ${B}Builder's Setup${N}`);
-  console.log(`  ${C}Plataforma:${N} ${platform}${wsl ? " (WSL)" : ""}`);
-  console.log(`  ${C}Arquitetura:${N} ${process.arch}`);
-  if (platform !== "windows") {
-    console.log(`  ${C}Profile:${N}    ${profilePath}`);
-  }
+
+  await ensureGitHubAccount();
 
   // Pre-cache sudo on linux (macOS tools don't need sudo)
   let sudoKeepAlive: Timer | undefined;
@@ -146,7 +144,6 @@ async function main() {
     log.info("Este script precisa de acesso sudo para instalar pacotes.");
     await $`sudo -v`;
 
-    // Keep sudo alive in the background
     sudoKeepAlive = setInterval(() => {
       Bun.spawn(["sudo", "-n", "true"], {
         stdout: "ignore",
@@ -157,7 +154,22 @@ async function main() {
 
   const failed: { name: string; output: string }[] = [];
 
+  console.log("");
+  log.info("Verificando ferramentas...");
+  async function countPending(tools: Tool[]): Promise<number> {
+    let count = 0;
+    for (const tool of tools) {
+      if (!getInstaller(tool, platform)) continue;
+      if (await isInstalled(tool)) continue;
+      count++;
+    }
+    return count;
+  }
+  const total = (await countPending(installs)) + (await countPending(setups));
+  log.info(`${total} ferramenta(s) para instalar/configurar.`);
+
   let executed = 0;
+  let current = 0;
 
   async function runTools(tools: Tool[], verb: string) {
     for (const tool of tools) {
@@ -166,7 +178,8 @@ async function main() {
 
       if (await isInstalled(tool)) continue;
 
-      log.step(`${verb} ${tool.name}...`);
+      current++;
+      log.step(`${verb} ${tool.name}...`, { current, total });
       try {
         const result = await installer();
 
@@ -250,6 +263,32 @@ async function main() {
 
   if (executed === 0) {
     log.info("Tudo já está instalado e configurado.");
+  }
+
+  console.log("");
+  console.log(
+    `  ${C}Plataforma:${N}  ${platform}${wsl ? " (WSL)" : ""}   ${C}Arquitetura:${N} ${process.arch}`,
+  );
+  if (platform !== "windows") {
+    console.log(`  ${C}Profile:${N}     ${profilePath}`);
+  }
+  console.log("");
+
+  const finalConfig = await loadConfig();
+  if (finalConfig.pendingGitHubSetup) {
+    console.log(`${Y}========================================${N}`);
+    console.log(`${Y}  Setup PARCIAL concluído               ${N}`);
+    console.log(`${Y}========================================${N}`);
+    console.log("");
+    console.log(`  ${B}AINDA FALTA:${N}`);
+    console.log("  1. Criar conta em https://github.com/signup");
+    console.log("  2. Solicitar ao HOLANDA a inclusão na");
+    console.log("     organização Inspira");
+    console.log("");
+    console.log("  Depois disso, rode o builder-setup novamente");
+    console.log("  para confirmar seu username.");
+    console.log("");
+    return;
   }
 
   console.log(`${G}========================================${N}`);
