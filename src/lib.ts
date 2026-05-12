@@ -169,12 +169,50 @@ export async function checkGitHubUser(username: string): Promise<GitHubCheckResu
   }
 }
 
+// ── GitHub Org ──
+
+export type GitHubOrgResult =
+  | { status: "member" }
+  | { status: "not_member" }
+  | { status: "unverified"; reason: string };
+
+/**
+ * Verifica se o usuário autenticado no gh CLI é membro da org inspira-legal.
+ * Requer que `gh auth` já tenha sido feito (token válido).
+ */
+export async function checkGitHubOrgMembership(): Promise<GitHubOrgResult> {
+  try {
+    const proc = Bun.spawn(["gh", "api", "orgs/inspira-legal/memberships/@me", "--silent"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const exitCode = await proc.exited;
+    if (exitCode === 0) return { status: "member" };
+
+    const stderr = await new Response(proc.stderr).text();
+    if (
+      stderr.includes("not logged into any GitHub host") ||
+      stderr.includes("authentication required")
+    ) {
+      return { status: "unverified", reason: "gh CLI não autenticado" };
+    }
+    // 404 ou 403 = não é membro ou token sem escopo
+    return { status: "not_member" };
+  } catch (err) {
+    return { status: "unverified", reason: (err as Error).message };
+  }
+}
+
 // ── Config ──
 
 export interface BuilderConfig {
   githubUsername?: string;
   /** True quando o usuário rodou o setup sem conta GitHub ainda. */
   pendingGitHubSetup?: boolean;
+  /** True quando confirmamos via API que o usuário é membro da org inspira-legal. */
+  githubOrgVerified?: boolean;
+  /** True quando o usuário declarou que já solicitou ao HOLANDA inclusão na org. */
+  githubOrgPending?: boolean;
 }
 
 const CONFIG_DIR = `${HOME}/.builder-setup`;
