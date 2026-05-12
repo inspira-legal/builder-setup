@@ -10,6 +10,11 @@ import {
   appendFile,
   refreshPath,
   log,
+  prompt,
+  pause,
+  checkGitHubUser,
+  loadConfig,
+  saveConfig,
 } from "./lib";
 
 function printWelcomeBox() {
@@ -40,6 +45,74 @@ function getInstaller(
   platform: Platform,
 ): (() => Promise<void | { profile: string[] }>) | null {
   return tool[platform] ?? null;
+}
+
+async function ensureGitHubAccount(): Promise<void> {
+  const Y = "\x1b[33m";
+  const G = "\x1b[32m";
+  const B = "\x1b[1m";
+  const N = "\x1b[0m";
+
+  const config = await loadConfig();
+  if (config.githubUsername) {
+    console.log(`  ${G}✔${N} Conta GitHub: ${B}${config.githubUsername}${N}`);
+    return;
+  }
+
+  while (true) {
+    console.log("  Digite seu username do GitHub (Enter vazio se sem conta):");
+    console.log(`  ${Y}(é o @ do seu perfil, ex: leandromedeiros — não é o email)${N}`);
+    const username = await prompt("  > ");
+
+    if (username.length === 0) {
+      console.log("");
+      console.log("  Você precisa de uma conta GitHub na organização Inspira");
+      console.log("  para usar este ambiente. Sem conta agora, você pode:");
+      console.log("");
+      console.log(`    ${B}[1]${N} Sair e voltar quando tiver conta (recomendado)`);
+      console.log(`    ${B}[2]${N} Prosseguir e instalar as ferramentas mesmo assim`);
+      console.log("");
+      const choice = await prompt("  Escolha (1/2): ");
+      if (choice === "2") {
+        log.warn("Prosseguindo sem conta GitHub.");
+        console.log(`  ${Y}IMPORTANTE:${N} termine de criar a conta em https://github.com/signup`);
+        console.log("  e solicite ao HOLANDA a inclusão na organização Inspira");
+        console.log("  antes de tentar usar o ambiente.");
+        await pause("\n  Pressione Enter para continuar com a instalação...");
+        await saveConfig({ pendingGitHubSetup: true });
+        return;
+      }
+      console.log("");
+      console.log("  Crie sua conta e execute o builder-setup novamente.");
+      console.log("");
+      process.exit(1);
+    }
+
+    log.info(`Validando "${username}"...`);
+    const result = await checkGitHubUser(username);
+
+    if (result.status === "exists") {
+      await saveConfig({ githubUsername: username, pendingGitHubSetup: false });
+      log.done(`Conta GitHub confirmada: ${username}`);
+      return;
+    }
+
+    if (result.status === "not_found") {
+      log.warn(`Usuário "${username}" não encontrado no GitHub.`);
+      log.info("Encontre seu username em https://github.com/settings/profile");
+      continue;
+    }
+
+    log.warn(`Não consegui validar com o GitHub (${result.reason}).`);
+    const confirmAnswer = (
+      await prompt(`  Prosseguir mesmo assim com "${username}"? (s/N): `)
+    ).toLowerCase();
+    if (confirmAnswer === "s" || confirmAnswer === "sim") {
+      await saveConfig({ githubUsername: username, pendingGitHubSetup: false });
+      log.done(`Conta GitHub aceita sem validação: ${username}`);
+      return;
+    }
+  }
 }
 
 async function isInstalled(tool: Tool): Promise<boolean> {
