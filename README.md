@@ -18,10 +18,22 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 
 > O script de instalação baixa o binário e executa com privilégios de Administrador via prompt UAC.
 
+## Pré-requisitos
+
+Para o setup completo, é necessário ter uma **conta no GitHub incluída na organização Inspira**.
+
+- Sem conta: crie em [github.com/signup](https://github.com/signup).
+- Conta criada: solicite ao **HOLANDA** (suporte) a inclusão na organização.
+
+O setup pergunta seu username no início e valida via API do GitHub. Sem conta agora, você pode optar por instalar as ferramentas e regularizar depois — o setup vai indicar a pendência ao final.
+
+Para resetar o username salvo: `rm -rf ~/.builder-setup`.
+
 ## O que faz
 
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
+| GitHub account check | ✅ | ✅ | ✅ | ✅ |
 | System packages | ⬚ | ✅ | ✅ | ✅ |
 | Linux dependencies | ⬚ | ⬚ | ✅ | ✅ |
 | Git | ✅ | ✅ | ✅ | ✅ |
