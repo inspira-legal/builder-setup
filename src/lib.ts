@@ -1,6 +1,8 @@
 import { homedir } from "os";
 import { mkdirSync } from "fs";
 import { dirname } from "path";
+import { createInterface } from "readline/promises";
+import { stdin as input, stdout as output } from "process";
 
 // ── Types ──
 
@@ -120,4 +122,22 @@ export async function appendFile(path: string, line: string): Promise<void> {
   }
   const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
   await Bun.write(path, existing + sep + line + "\n");
+}
+
+// ── Input ──
+
+/** Pergunta uma string ao usuário (retorna trim). */
+export async function prompt(question: string): Promise<string> {
+  const rl = createInterface({ input, output });
+  try {
+    const answer = await rl.question(question);
+    return answer.trim();
+  } finally {
+    rl.close();
+  }
+}
+
+/** Pausa esperando Enter (ignora qualquer input). */
+export async function pause(message: string): Promise<void> {
+  await prompt(message);
 }
