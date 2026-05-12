@@ -165,3 +165,29 @@ export async function checkGitHubUser(username: string): Promise<GitHubCheckResu
     return { status: "unreachable", reason: (err as Error).message };
   }
 }
+
+// ── Config ──
+
+export interface BuilderConfig {
+  githubUsername?: string;
+  /** True quando o usuário rodou o setup sem conta GitHub ainda. */
+  pendingGitHubSetup?: boolean;
+}
+
+const CONFIG_DIR = `${HOME}/.builder-setup`;
+const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
+
+export async function loadConfig(): Promise<BuilderConfig> {
+  try {
+    return JSON.parse(await Bun.file(CONFIG_PATH).text()) as BuilderConfig;
+  } catch {
+    return {};
+  }
+}
+
+export async function saveConfig(patch: Partial<BuilderConfig>): Promise<void> {
+  const current = await loadConfig();
+  const next = { ...current, ...patch };
+  mkdirSync(CONFIG_DIR, { recursive: true });
+  await Bun.write(CONFIG_PATH, JSON.stringify(next, null, 2) + "\n");
+}
