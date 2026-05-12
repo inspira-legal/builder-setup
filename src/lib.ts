@@ -141,3 +141,27 @@ export async function prompt(question: string): Promise<string> {
 export async function pause(message: string): Promise<void> {
   await prompt(message);
 }
+
+// ── GitHub ──
+
+export type GitHubCheckResult =
+  | { status: "exists" }
+  | { status: "not_found" }
+  | { status: "unreachable"; reason: string };
+
+/**
+ * Verifica via API do GitHub se um username existe.
+ * Distingue "não existe" (404) de "não consegui validar" (rede/rate-limit).
+ */
+export async function checkGitHubUser(username: string): Promise<GitHubCheckResult> {
+  try {
+    const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (res.status === 200) return { status: "exists" };
+    if (res.status === 404) return { status: "not_found" };
+    return { status: "unreachable", reason: `HTTP ${res.status}` };
+  } catch (err) {
+    return { status: "unreachable", reason: (err as Error).message };
+  }
+}
