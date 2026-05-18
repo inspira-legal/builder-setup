@@ -148,22 +148,29 @@ export async function pause(message: string): Promise<void> {
 // ── GitHub ──
 
 export type GitHubCheckResult =
-  | { status: "exists" }
+  | { status: "exists"; canonical: string }
   | { status: "not_found" }
   | { status: "unreachable"; reason: string };
 
 /**
  * Verifica via API do GitHub se um username existe.
  * Distingue "não existe" (404) de "não consegui validar" (rede/rate-limit).
+ * Retorna o login canônico (case-correct) quando encontrado.
  */
 export async function checkGitHubUser(username: string): Promise<GitHubCheckResult> {
   try {
     const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
       headers: { Accept: "application/vnd.github+json" },
     });
-    if (res.status === 200) return { status: "exists" };
+    if (res.status === 200) {
+      const body = (await res.json()) as { login: string };
+      return { status: "exists", canonical: body.login };
+    }
     if (res.status === 404) return { status: "not_found" };
-    return { status: "unreachable", reason: `HTTP ${res.status}` };
+    // Rate limit ou outro erro HTTP
+    const reason =
+      res.status === 403 ? `HTTP 403 (rate limit ou acesso negado)` : `HTTP ${res.status}`;
+    return { status: "unreachable", reason };
   } catch (err) {
     return { status: "unreachable", reason: (err as Error).message };
   }
@@ -179,10 +186,11 @@ export type GitHubOrgResult =
 /**
  * Verifica se o usuário autenticado no gh CLI é membro da org inspira-legal.
  * Requer que `gh auth` já tenha sido feito (token válido).
+ * Distingue: membro, não-membro (404), auth/scope insuficiente (403/unauthenticated), e erros inesperados.
  */
 export async function checkGitHubOrgMembership(): Promise<GitHubOrgResult> {
   try {
-    const proc = Bun.spawn(["gh", "api", "orgs/inspira-legal/memberships/@me", "--silent"], {
+    const proc = Bun.spawn(["gh", "api", "orgs/inspira-legal/memberships/@me"], {
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -190,14 +198,31 @@ export async function checkGitHubOrgMembership(): Promise<GitHubOrgResult> {
     if (exitCode === 0) return { status: "member" };
 
     const stderr = await new Response(proc.stderr).text();
+
+    // Erros de autenticação / token inválido / não logado
     if (
       stderr.includes("not logged into any GitHub host") ||
-      stderr.includes("authentication required")
+      stderr.includes("authentication required") ||
+      stderr.includes("HTTP 401")
     ) {
       return { status: "unverified", reason: "gh CLI não autenticado" };
     }
-    // 404 ou 403 = não é membro ou token sem escopo
-    return { status: "not_member" };
+
+    // Sem escopo read:org ou SSO enforcement (o gh retorna 403 nesses casos)
+    if (
+      stderr.includes("HTTP 403") ||
+      stderr.includes("Resource protected by organization SAML enforcement")
+    ) {
+      return { status: "unverified", reason: "token sem escopo read:org ou SSO pendente" };
+    }
+
+    // 404 confirmado = usuário autenticado mas não é membro da org
+    if (stderr.includes("HTTP 404")) {
+      return { status: "not_member" };
+    }
+
+    // Qualquer outro erro (rede, org inexistente, etc.)
+    return { status: "unverified", reason: `gh api falhou (stderr: ${stderr.trim()})` };
   } catch (err) {
     return { status: "unverified", reason: (err as Error).message };
   }
@@ -207,8 +232,6 @@ export async function checkGitHubOrgMembership(): Promise<GitHubOrgResult> {
 
 export interface BuilderConfig {
   githubUsername?: string;
-  /** True quando o usuário rodou o setup sem conta GitHub ainda. */
-  pendingGitHubSetup?: boolean;
   /** True quando confirmamos via API que o usuário é membro da org inspira-legal. */
   githubOrgVerified?: boolean;
   /** True quando o usuário declarou que já solicitou ao HOLANDA inclusão na org. */

@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { installs, setups } from "./tools";
+import { coreInstalls, platformInstalls, setups } from "./tools";
 import {
   type Tool,
   type Platform,
@@ -75,7 +75,8 @@ async function ensureGitHubAccount(): Promise<{ username: string | null; orgVeri
     if (orgResult.verified) {
       return { username: config.githubUsername, orgVerified: true };
     }
-    // Se não verificou, segue para perguntar novamente (usuário pode ter resolvido)
+    // Se não verificou, retorna o que temos para não re-perguntar o username
+    return { username: config.githubUsername, orgVerified: false };
   }
 
   // Loop até obter um username válido
@@ -98,8 +99,8 @@ async function ensureGitHubAccount(): Promise<{ username: string | null; orgVeri
     const result = await checkGitHubUser(answer);
 
     if (result.status === "exists") {
-      username = answer;
-      await saveConfig({ githubUsername: username, pendingGitHubSetup: false });
+      username = result.canonical;
+      await saveConfig({ githubUsername: username });
       log.done(`Conta GitHub confirmada: ${username}`);
       console.log("");
       break;
@@ -118,7 +119,7 @@ async function ensureGitHubAccount(): Promise<{ username: string | null; orgVeri
     ).toLowerCase();
     if (confirmAnswer === "s" || confirmAnswer === "sim") {
       username = answer;
-      await saveConfig({ githubUsername: username, pendingGitHubSetup: false });
+      await saveConfig({ githubUsername: username });
       log.done(`Conta GitHub aceita sem validação: ${username}`);
       console.log("");
       break;
@@ -140,25 +141,33 @@ async function handleNoAccount(): Promise<boolean> {
   console.log("  Você precisa de uma conta GitHub na organização Inspira");
   console.log("  para usar este ambiente. Sem conta agora, você pode:");
   console.log("");
-  console.log(`    ${B}[1]${N} Sair e voltar quando tiver conta (recomendado)`);
-  console.log(`    ${B}[2]${N} Prosseguir e instalar as ferramentas mesmo assim`);
-  console.log("");
-  const choice = await prompt("  Escolha (1/2): ");
 
-  if (choice === "2") {
-    log.warn("Prosseguindo sem conta GitHub.");
-    console.log(`  ${Y}IMPORTANTE:${N} termine de criar a conta em https://github.com/signup`);
-    console.log("  e solicite ao HOLANDA a inclusão na organização Inspira");
-    console.log("  antes de tentar usar o ambiente.");
-    await pause("\n  Pressione Enter para continuar com a instalação...");
-    await saveConfig({ pendingGitHubSetup: true, githubOrgPending: false });
-    return true;
+  while (true) {
+    console.log(`    ${B}[1]${N} Sair e voltar quando tiver conta (recomendado)`);
+    console.log(`    ${B}[2]${N} Prosseguir e instalar as ferramentas mesmo assim`);
+    console.log("");
+    const choice = await prompt("  Escolha (1/2): ");
+
+    if (choice === "2") {
+      log.warn("Prosseguindo sem conta GitHub.");
+      console.log(`  ${Y}IMPORTANTE:${N} termine de criar a conta em https://github.com/signup`);
+      console.log("  e solicite ao HOLANDA a inclusão na organização Inspira");
+      console.log("  antes de tentar usar o ambiente.");
+      await pause("\n  Pressione Enter para continuar com a instalação...");
+      return true;
+    }
+
+    if (choice === "1") {
+      console.log("");
+      console.log("  Crie sua conta e execute o builder-setup novamente.");
+      console.log("");
+      process.exit(0);
+    }
+
+    console.log("");
+    console.log(`  ${Y}Resposta inválida.${N} Digite 1 ou 2.`);
+    console.log("");
   }
-
-  console.log("");
-  console.log("  Crie sua conta e execute o builder-setup novamente.");
-  console.log("");
-  process.exit(1);
 }
 
 async function verifyOrgAccess(username: string): Promise<{ verified: boolean }> {
@@ -204,26 +213,7 @@ async function verifyOrgAccess(username: string): Promise<{ verified: boolean }>
   console.log("");
 
   while (true) {
-    const answer = (await prompt("  (s)im / (n)ão / (v)ou fazer agora: ")).toLowerCase();
-
-    if (answer === "v" || answer === "vou fazer agora") {
-      console.log("");
-      console.log("  Ótimo. Vou aguardar enquanto você resolve.");
-      console.log("");
-      console.log("  Como fazer:");
-      console.log("    1. Envie uma mensagem para HOLANDA solicitando inclusão");
-      console.log("       na organização inspira-legal no GitHub");
-      console.log(`    2. Informe seu username: ${B}${username}${N}`);
-      console.log("");
-      await pause("  ⏎ Pressione Enter quando tiver enviado a solicitação...");
-      console.log("");
-      console.log("  Salvando seu progresso. Você pode continuar instalando");
-      console.log("  as ferramentas agora. Rode o builder-setup novamente depois");
-      console.log("  que HOLANDA confirmar sua inclusão.");
-      console.log("");
-      await saveConfig({ githubOrgPending: true, githubOrgVerified: false });
-      return { verified: false };
-    }
+    const answer = (await prompt("  (s)im / (n)ão: ")).toLowerCase();
 
     if (answer === "s" || answer === "sim") {
       console.log("");
@@ -240,42 +230,49 @@ async function verifyOrgAccess(username: string): Promise<{ verified: boolean }>
       console.log("  Sem acesso à organização, você não conseguirá trabalhar");
       console.log("  nos projetos da Inspira.");
       console.log("");
-      console.log("  Você pode:");
-      console.log(`    ${B}[1]${N} Resolver agora (recomendado)`);
-      console.log(`    ${B}[2]${N} Instalar ferramentas primeiro e resolver depois`);
-      console.log("");
-      const choice = await prompt("  Escolha (1/2): ");
 
-      if (choice === "1") {
+      while (true) {
+        console.log("  Você pode:");
+        console.log(`    ${B}[1]${N} Resolver agora (recomendado)`);
+        console.log(`    ${B}[2]${N} Instalar ferramentas primeiro e resolver depois`);
         console.log("");
-        console.log("  Envie uma mensagem para HOLANDA agora:");
-        console.log(`    "Olá! Meu username no GitHub é ${B}${username}${N}."`);
-        console.log(`    "Poderia me incluir na organização inspira-legal?"`);
+        const choice = await prompt("  Escolha (1/2): ");
+
+        if (choice === "1") {
+          console.log("");
+          console.log("  Envie uma mensagem para HOLANDA agora:");
+          console.log(`    "Olá! Meu username no GitHub é ${B}${username}${N}."`);
+          console.log(`    "Poderia me incluir na organização inspira-legal?"`);
+          console.log("");
+          await pause("  ⏎ Pressione Enter quando tiver enviado...");
+          console.log("");
+          console.log("  Salvando seu progresso. Você pode continuar instalando");
+          console.log("  as ferramentas agora. Rode o builder-setup novamente depois");
+          console.log("  que HOLANDA confirmar sua inclusão.");
+          console.log("");
+          await saveConfig({ githubOrgPending: true, githubOrgVerified: false });
+          return { verified: false };
+        }
+
+        if (choice === "2") {
+          console.log("");
+          console.log("  Entendido. Vou preparar seu computador agora.");
+          console.log(`  ${Y}Lembrete:${N} sem acesso à organização, você ainda não`);
+          console.log("  conseguirá clonar os projetos, mas o computador ficará");
+          console.log("  pronto para quando HOLANDA liberar.");
+          console.log("");
+          await saveConfig({ githubOrgPending: false, githubOrgVerified: false });
+          return { verified: false };
+        }
+
         console.log("");
-        await pause("  ⏎ Pressione Enter quando tiver enviado...");
+        console.log(`  ${Y}Resposta inválida.${N} Digite 1 ou 2.`);
         console.log("");
-        await saveConfig({ githubOrgPending: true, githubOrgVerified: false });
-        return { verified: false };
       }
-
-      if (choice === "2") {
-        console.log("");
-        console.log("  Entendido. Vou preparar seu computador agora.");
-        console.log(`  ${Y}Lembrete:${N} sem acesso à organização, você ainda não`);
-        console.log("  conseguirá clonar os projetos, mas o computador ficará");
-        console.log("  pronto para quando HOLANDA liberar.");
-        console.log("");
-        await saveConfig({ githubOrgPending: false, githubOrgVerified: false });
-        return { verified: false };
-      }
-
-      // Resposta inválida no 1/2, volta a perguntar s/n/v
-      console.log("");
-      continue;
     }
 
     console.log("");
-    console.log("  Resposta não reconhecida. Use: s (sim), n (não) ou v (vou fazer agora)");
+    console.log(`  ${Y}Resposta não reconhecida.${N} Use: s (sim) ou n (não)`);
     console.log("");
   }
 }
@@ -319,6 +316,29 @@ async function main() {
 
   const failed: { name: string; output: string }[] = [];
 
+  // Pergunta se é time de Plataforma (infra / DevOps)
+  let isPlatformTeam = false;
+  console.log("");
+  console.log(`  ${B}Pergunta rápida:${N} você faz parte do time de Plataforma`);
+  console.log("  (infraestrutura, DevOps, ou desenvolvimento de backend)?");
+  console.log("");
+  while (true) {
+    const platAnswer = (await prompt("  (s)im / (n)ão: ")).toLowerCase();
+    if (platAnswer === "s" || platAnswer === "sim") {
+      isPlatformTeam = true;
+      break;
+    }
+    if (platAnswer === "n" || platAnswer === "não" || platAnswer === "nao") {
+      isPlatformTeam = false;
+      break;
+    }
+    console.log("");
+    console.log(`  ${Y}Resposta não reconhecida.${N} Use: s (sim) ou n (não)`);
+    console.log("");
+  }
+
+  const activeInstalls = isPlatformTeam ? [...coreInstalls, ...platformInstalls] : coreInstalls;
+
   console.log("");
   log.info("Verificando ferramentas...");
   async function countPending(tools: Tool[]): Promise<number> {
@@ -330,7 +350,7 @@ async function main() {
     }
     return count;
   }
-  const total = (await countPending(installs)) + (await countPending(setups));
+  const total = (await countPending(activeInstalls)) + (await countPending(setups));
   log.info(`${total} ferramenta(s) para instalar/configurar.`);
   console.log("");
 
@@ -338,8 +358,11 @@ async function main() {
   let current = 0;
 
   console.log(`  ${C}▸ Passo 1.2 — Ferramentas${N}`);
-  console.log("  Vou instalar e configurar o que seu computador precisa");
-  console.log("  para rodar os projetos da Inspira.");
+  if (isPlatformTeam) {
+    console.log("  Instalando stack completo (essencial + Plataforma).");
+  } else {
+    console.log("  Instalando stack essencial para todos os setores.");
+  }
   console.log("");
 
   async function runTools(tools: Tool[], verb: string) {
@@ -378,8 +401,20 @@ async function main() {
     }
   }
 
-  await runTools(installs, "Instalando");
+  await runTools(activeInstalls, "Instalando");
   await runTools(setups, "Configurando");
+
+  // Re-verificação automática de org: se gh acabou de ser instalado,
+  // tentamos confirmar silenciosamente sem perguntar nada ao usuário.
+  if (identity.username && !identity.orgVerified && Bun.which("gh") !== null) {
+    const ghResult = await checkGitHubOrgMembership();
+    if (ghResult.status === "member") {
+      await saveConfig({ githubOrgVerified: true, githubOrgPending: false });
+      identity.orgVerified = true;
+      log.done("Acesso à organização Inspira confirmado automaticamente após instalação do gh");
+      console.log("");
+    }
+  }
 
   // Stop sudo keep-alive
   if (sudoKeepAlive) clearInterval(sudoKeepAlive);
@@ -389,7 +424,7 @@ async function main() {
   const DIM = "\x1b[2m";
   const verifyFailed: string[] = [];
 
-  const verifiable = installs.filter((t) => t.verify && getInstaller(t, platform));
+  const verifiable = activeInstalls.filter((t) => t.verify && getInstaller(t, platform));
 
   if (verifiable.length > 0) {
     console.log(`\n  ${B}Verificação${N}`);
@@ -420,6 +455,19 @@ async function main() {
     console.log(`${R}========================================${N}`);
     console.log("");
   }
+
+  // Status de identidade: mostra em TODOS os cenários, inclusive quando ferramentas falham
+  if (identityComplete) {
+    console.log(`  ${G}✔${N} Passo 1.1 — Identidade: completo`);
+    console.log(`     Conta: ${B}${identity.username}${N}  |  Org Inspira: confirmada`);
+  } else if (identityPartial) {
+    console.log(`  ${Y}⏳${N} Passo 1.1 — Identidade: parcial`);
+    console.log(`     Conta: ${B}${identity.username}${N}  |  Org Inspira: ${Y}pendente${N}`);
+  } else if (identityMissing) {
+    console.log(`  ${Y}⏳${N} Passo 1.1 — Identidade: pendente`);
+    console.log(`     Conta GitHub: ${Y}ainda não criada${N}`);
+  }
+  console.log("");
 
   if (failed.length > 0) {
     console.log(`${R}  Algumas ferramentas falharam:${N}`);
@@ -453,17 +501,6 @@ async function main() {
   console.log(`${G}  ✅ Passo 1 da Jornada Builder           ${N}`);
   console.log(`${G}========================================${N}`);
   console.log("");
-
-  if (identityComplete) {
-    console.log(`  ${G}✔${N} Passo 1.1 — Identidade: completo`);
-    console.log(`     Conta: ${B}${identity.username}${N}  |  Org Inspira: confirmada`);
-  } else if (identityPartial) {
-    console.log(`  ${Y}⏳${N} Passo 1.1 — Identidade: parcial`);
-    console.log(`     Conta: ${B}${identity.username}${N}  |  Org Inspira: ${Y}pendente${N}`);
-  } else if (identityMissing) {
-    console.log(`  ${Y}⏳${N} Passo 1.1 — Identidade: pendente`);
-    console.log(`     Conta GitHub: ${Y}ainda não criada${N}`);
-  }
 
   if (executed === 0) {
     console.log(`  ${G}✔${N} Passo 1.2 — Ferramentas: já estavam prontas`);

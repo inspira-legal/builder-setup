@@ -15,8 +15,6 @@ import {
 
 const FNM_DIR = `${HOME}/.local/share/fnm`;
 const FNM = `${FNM_DIR}/fnm`;
-const PYENV_ROOT = `${HOME}/.pyenv`;
-const PYENV = `${PYENV_ROOT}/bin/pyenv`;
 const LINUX_DEPS = [
   "unzip",
   "build-essential",
@@ -84,9 +82,9 @@ Signed-By: /etc/apt/keyrings/docker.asc`;
   }
 }
 
-// ── Install list ──
+// ── Core installs (todos os funcionários) ──
 
-export const installs: Tool[] = [
+export const coreInstalls: Tool[] = [
   {
     name: "System packages",
     shouldSkip: async () => {
@@ -131,25 +129,6 @@ export const installs: Tool[] = [
   },
 
   {
-    name: "Docker",
-    shouldSkip: async () => has("docker"),
-    verify: async () => Bun.which("docker"),
-    linux: async () => {
-      if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
-        await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
-        log.done("systemd habilitado em wsl.conf");
-      }
-      await installDockerApt();
-    },
-    darwin: async () => {
-      await $`brew install --cask docker-desktop`;
-    },
-    windows: async () => {
-      await winget("Docker.DockerDesktop");
-    },
-  },
-
-  {
     name: "GitHub CLI",
     shouldSkip: async () => has("gh"),
     verify: async () => Bun.which("gh"),
@@ -178,10 +157,6 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await winget("GitHub.cli");
     },
   },
-
-  // ────────────────────────────────────────
-  //  Dev runtimes
-  // ────────────────────────────────────────
 
   {
     name: "fnm",
@@ -221,21 +196,6 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   },
 
   {
-    name: "Bun",
-    shouldSkip: async () => has("bun"),
-    verify: async () => Bun.which("bun"),
-    linux: async () => {
-      await $`curl -fsSL https://bun.com/install | bash`;
-    },
-    darwin: async () => {
-      await $`curl -fsSL https://bun.com/install | bash`;
-    },
-    windows: async () => {
-      await $`powershell -NoProfile -Command "irm bun.sh/install.ps1 | iex"`;
-    },
-  },
-
-  {
     name: "pnpm",
     shouldSkip: async () => has("pnpm"),
     verify: async () => Bun.which("pnpm"),
@@ -266,42 +226,62 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
   },
 
   {
-    name: "pyenv",
-    verify: async () => Bun.which("pyenv"),
-    shouldSkip: async () => has("pyenv") || (await fileExists(PYENV)),
-    linux: async () => {
-      await $`curl -fsSL https://pyenv.run | bash`;
-    },
-    darwin: async () => {
-      await $`brew install pyenv`;
-    },
-  },
-
-  {
     name: "Python",
     shouldSkip: async () => {
       if (process.platform === "win32") return has("python");
-      if (!has("pyenv") && !(await fileExists(PYENV))) return true;
-      const result = await $`pyenv versions`.quiet().nothrow();
-      return result.exitCode === 0 && /\d+\.\d+/.test(result.stdout.toString());
+      if (!has("uv")) return true;
+      const result = await $`uv python list`.quiet().nothrow();
+      return result.exitCode === 0 && result.stdout.toString().includes("3.13");
     },
     verify: async () => Bun.which(process.platform === "win32" ? "python" : "python3"),
     linux: async () => {
-      await $`pyenv install -s 3.13`;
-      await $`pyenv global 3.13`;
+      await $`uv python install 3.13`;
     },
     darwin: async () => {
-      await $`pyenv install -s 3.13`;
-      await $`pyenv global 3.13`;
+      await $`uv python install 3.13`;
     },
     windows: async () => {
       await winget("Python.Python.3.13");
     },
   },
 
-  // ────────────────────────────────────────
-  //  Cloud tools
-  // ────────────────────────────────────────
+  {
+    name: "Claude Code",
+    verify: async () => Bun.which("claude"),
+    shouldSkip: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
+    linux: async () => {
+      await $`curl -fsSL https://claude.ai/install.sh | bash`;
+    },
+    darwin: async () => {
+      await $`curl -fsSL https://claude.ai/install.sh | bash`;
+    },
+    windows: async () => {
+      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
+    },
+  },
+];
+
+// ── Platform installs (time de Plataforma / DevOps) ──
+
+export const platformInstalls: Tool[] = [
+  {
+    name: "Docker",
+    shouldSkip: async () => has("docker"),
+    verify: async () => Bun.which("docker"),
+    linux: async () => {
+      if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
+        await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
+        log.done("systemd habilitado em wsl.conf");
+      }
+      await installDockerApt();
+    },
+    darwin: async () => {
+      await $`brew install --cask docker-desktop`;
+    },
+    windows: async () => {
+      await winget("Docker.DockerDesktop");
+    },
+  },
 
   {
     name: "Google Cloud SDK",
@@ -350,24 +330,9 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await winget("Microsoft.VisualStudioCode");
     },
   },
-
-  {
-    name: "Claude Code",
-    verify: async () => Bun.which("claude"),
-    shouldSkip: async () => has("claude") || (await fileExists(`${HOME}/.claude/bin/claude`)),
-    linux: async () => {
-      await $`curl -fsSL https://claude.ai/install.sh | bash`;
-    },
-    darwin: async () => {
-      await $`curl -fsSL https://claude.ai/install.sh | bash`;
-    },
-    windows: async () => {
-      await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
-    },
-  },
 ];
 
-// ── Setup list ──
+// ── Setups ──
 
 export const setups: Tool[] = [
   {
@@ -399,24 +364,6 @@ export const setups: Tool[] = [
     }),
     darwin: async () => ({
       profile: ['eval "$(fnm env --use-on-cd)"'],
-    }),
-  },
-
-  {
-    name: "pyenv profile",
-    shouldSkip: async () => {
-      if (!has("pyenv") && !(await fileExists(PYENV))) return true;
-      return fileContains(getProfilePath(), 'eval "$(pyenv init');
-    },
-    linux: async () => ({
-      profile: [
-        'export PYENV_ROOT="$HOME/.pyenv"',
-        '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"',
-        'eval "$(pyenv init -)"',
-      ],
-    }),
-    darwin: async () => ({
-      profile: ['eval "$(pyenv init -)"'],
     }),
   },
 

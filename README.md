@@ -1,6 +1,6 @@
 # builder-setup
 
-> Seu primeiro passo na Inspira. Vou preparar seu computador para você começar a trabalhar.
+> Seu primeiro passo na Inspira. Preparamos seu computador para você usar nossas ferramentas de IA, criar fluxos no LexFlow e colaborar com o time.
 
 ## ⚡ Início rápido
 
@@ -16,18 +16,18 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/in
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
 ```
 
-> **O que faz esse comando?** Ele baixa um programa chamado `builder-setup`, que vai guiar você passo a passo. Não se preocupe — vou explicar cada parte antes de fazer qualquer coisa.
+> **O que esse comando faz?** Ele baixa um programa chamado `builder-setup`, que vai guiar você passo a passo. Não se preocipe — vou explicar cada parte antes de fazer qualquer coisa.
 
 ---
 
 ## 📋 O que você precisa antes de começar
 
-Para trabalhar nos projetos da Inspira, seu computador precisa de duas coisas:
+Para trabalhar na Inspira, seu computador precisa de duas coisas:
 
-1. **Uma conta no GitHub** (o site onde ficam os códigos)
-2. **Essa conta dentro da organização Inspira** (tipo um grupo fechado no GitHub)
+1. **Uma conta no GitHub** (onde ficam os códigos e ferramentas internas)
+2. **Essa conta dentro da organização Inspira** (um grupo fechado no GitHub)
 
-> **Importante:** ter uma conta no GitHub **não é o suficiente**. Se você ainda não foi incluído(a) no grupo da Inspira, não vai conseguir ver os projetos — mesmo com tudo instalado.
+> **Importante:** ter uma conta no GitHub **não é o suficiente**. Se você ainda não foi incluído(a) no grupo da Inspira, não vai conseguir acessar tudo — mesmo com tudo instalado.
 
 **Se você ainda não tem tudo pronto:**
 - Sem conta no GitHub? [Crie aqui](https://github.com/signup) (é de graça)
@@ -54,25 +54,44 @@ Vou perguntar seu nome de usuário no GitHub (aquele com `@`, tipo `@maria-silva
 ### Momento 3 — Ferramentas (Passo 1.2)
 Vou verificar o que já está no seu computador e instalar só o que falta.
 
+**Pergunta rápida:** antes de instalar, vou perguntar se você faz parte do **time de Plataforma** (infraestrutura, DevOps ou desenvolvimento de backend). Se sim, instalo ferramentas extras como Docker e Google Cloud SDK. Se não, instalo apenas o essencial para todos os setores.
+
+### O que instalamos para todo mundo (essencial)
+
 | Ferramenta | Para que serve |
 |-------------|----------------|
 | Git | Baixa e envia os códigos dos projetos |
-| Docker | Roda programas em caixinhas isoladas |
 | GitHub CLI | Fala com o GitHub pelo terminal |
-| Node.js | Roda a parte dos sites (frontend) |
-| Bun | Rápido, para instalar bibliotecas de código |
-| pnpm | Outro jeito de instalar bibliotecas |
-| uv | Para projetos de Python |
-| Python | Roda a parte inteligente dos sistemas (backend) |
+| fnm + Node.js | Roda ferramentas web internas |
+| pnpm | Instala bibliotecas de código |
+| uv + Python | Roda a LexFlow CLI e outras ferramentas internas |
+| Claude Code | Assistente de código que conversa com você no terminal |
+
+### O que instalamos apenas para Plataforma (opcional)
+
+| Ferramenta | Para que serve |
+|-------------|----------------|
+| Docker | Roda programas em caixinhas isoladas |
 | Google Cloud SDK | Conecta aos serviços da Google que usamos |
-| VS Code | Onde você vai escrever código |
-| Claude Code | Assistente de código (como eu!) |
+| VS Code | Editor de código tradicional |
+
+### LexFlow e Antigravity
+
+**LexFlow** é a ferramenta interna da Inspira para criar fluxos de trabalho com IA (estilo n8n). Para usá-la, depois do setup rode:
+
+```bash
+uv tool install lexflow-cli
+```
+
+**Antigravity** é o editor recomendado pela Inspira para trabalhar com agentes de IA. Ele ainda está em lançamento — quando disponível, será o nosso padrão no lugar do VS Code.
 
 > **Você pode rodar o builder-setup quantas vezes quiser.** Se algo já está instalado, eu pulo automaticamente.
 
 ---
 
 ## 📊 Tabela de suporte por sistema
+
+### Ferramentas essenciais (todos os setores)
 
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
@@ -81,22 +100,25 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 | System packages | ⬚ | ✅ | ✅ | ✅ |
 | Linux dependencies | ⬚ | ⬚ | ✅ | ✅ |
 | Git | ✅ | ✅ | ✅ | ✅ |
-| Docker | ✅ | ✅ | ✅ | ✅ |
 | GitHub CLI | ✅ | ✅ | ✅ | ✅ |
-| fnm | ✅ | ✅ | ✅ | ✅ |
-| Node.js | ✅ | ✅ | ✅ | ✅ |
-| Bun | ✅ | ✅ | ✅ | ✅ |
+| fnm + Node.js | ✅ | ✅ | ✅ | ✅ |
 | pnpm | ✅ | ✅ | ✅ | ✅ |
-| uv | ✅ | ✅ | ✅ | ✅ |
-| pyenv | ⬚ | ✅ | ✅ | ✅ |
-| Python | ✅ | ✅ | ✅ | ✅ |
-| Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
-| VS Code | ✅ | ✅ | ✅ | ⬚ |
+| uv + Python | ✅ | ✅ | ✅ | ✅ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ |
 | Git config | ✅ | ✅ | ✅ | ✅ |
 | fnm profile | ✅ | ✅ | ✅ | ✅ |
-| pyenv profile | ⬚ | ✅ | ✅ | ✅ |
-| WSL config (editor, browser) | ⬚ | ⬚ | ⬚ | ✅ |
+| fnm PowerShell | ✅ | ⬚ | ⬚ | ⬚ |
+| fnm Git Bash | ✅ | ⬚ | ⬚ | ⬚ |
+| fnm CMD | ✅ | ⬚ | ⬚ | ⬚ |
+| WSL config | ⬚ | ⬚ | ⬚ | ✅ |
+
+### Ferramentas de Plataforma (opcional)
+
+| | Windows | macOS | Linux | WSL |
+|--|---------|-------|-------|-----|
+| Docker | ✅ | ✅ | ✅ | ✅ |
+| Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
+| VS Code | ✅ | ✅ | ✅ | ⬚ |
 
 **Legenda:**
 - ✅ = eu instalo/configuro para você
@@ -122,17 +144,20 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 **Git**
 > Programa que controla as versões do código. Com ele você pode baixar (`git clone`), enviar (`git push`) e voltar no tempo se algo der errado.
 
-**Docker**
-> Programa que roda outros programas em "caixinhas" isoladas. Ajuda a todo mundo ter o mesmo ambiente, evitando "no meu computador funciona".
+**LexFlow**
+> Ferramenta interna da Inspira para criar fluxos de trabalho automatizados com IA. Você desenha fluxos em blocos (estilo n8n) e a IA executa as tarefas.
 
-**VS Code**
-> O programa onde você vai escrever e ler código. É tipo um Word, mas feito para programação — com cores, autocompletar e muitas ferramentas úteis.
+**Claude Code**
+> Assistente de código que conversa com você no terminal. Pode escrever código, responder perguntas e ajudar em tarefas do dia a dia.
 
 **Profile / .bashrc / .zshrc**
 > Arquivos secretos do terminal que guardam configurações. O builder-setup os edita para que os programas instalados fiquem disponíveis quando você abre um terminal novo.
 
 **WSL**
-> Windows Subsystem for Linux. Um jeito de ter um Linux dentro do Windows. Se você usa WSL, o builder-setup configura tudo no Linux e aproveita programas do Windows (como o VS Code).
+> Windows Subsystem for Linux. Um jeito de ter um Linux dentro do Windows. Se você usa WSL, o builder-setup configura tudo no Linux e aproveita programas do Windows.
+
+**Time de Plataforma**
+> Na Inspira, chamamos de "Plataforma" o time que cuida de infraestrutura, DevOps e backend. Se você faz parte desse time, o setup instala ferramentas extras como Docker e Google Cloud SDK.
 
 ---
 
@@ -165,8 +190,8 @@ Da próxima vez que rodar, vou perguntar tudo de novo.
 - `gcloud auth login` — autenticação automática na Google
 - Setup de chave SSH do Git (para não precisar de senha ao baixar código)
 - Setup interativo guiado por Claude (como ter um colega ao lado)
+- Instalação automática do Antigravity (assim que disponível publicamente)
 
 ---
 
 *Dúvidas? Entre no canal **#support-help-aifirst** no Slack da Inspira. Lá o time de suporte te ajuda com tudo que envolve ambiente de desenvolvimento.*
-
