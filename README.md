@@ -56,6 +56,8 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 
 **Pergunta rápida:** antes de instalar, vou perguntar se você faz parte do **time de Plataforma** (infraestrutura, DevOps ou desenvolvimento de backend). Se sim, instalo ferramentas extras como Docker e Google Cloud SDK. Se não, instalo apenas o essencial para todos os setores.
 
+> **Nota:** Antigravity ainda requer instalação manual no macOS e Windows (o setup abre o navegador para você). No Linux, é instalado automaticamente via APT.
+
 ### O que instalamos para todo mundo (essencial)
 
 | Ferramenta | Para que serve |
@@ -73,7 +75,7 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 |-------------|----------------|
 | Docker | Roda programas em caixinhas isoladas |
 | Google Cloud SDK | Conecta aos serviços da Google que usamos |
-| VS Code | Editor de código tradicional |
+| Antigravity | Editor AI-first (agentes, assistentes) |
 
 ### LexFlow e Antigravity
 

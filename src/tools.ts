@@ -302,34 +302,45 @@ export const platformInstalls: Tool[] = [
   },
 
   {
-    name: "VS Code",
-    verify: async () => Bun.which("code"),
+    name: "Antigravity",
+    verify: async () => Bun.which("antigravity"),
     shouldSkip: async () => {
-      // On WSL, VS Code comes from Windows via PATH interop
-      if (isWSL()) return true;
-      return has("code");
+      if (process.platform === "darwin") {
+        return await fileExists("/Applications/Antigravity.app");
+      }
+      if (process.platform === "win32") {
+        return await fileExists(`${HOME}\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe`);
+      }
+      return has("antigravity");
     },
     linux: async () => {
-      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
-      await $`sudo chmod go+r /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
+      await $`sudo mkdir -p -m 755 /etc/apt/keyrings`.quiet();
+      await $`curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg`.quiet();
 
       const sources = `Types: deb
-URIs: https://packages.microsoft.com/repos/code
-Suites: stable
+URIs: https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/
+Suites: antigravity-debian
 Components: main
 Architectures: amd64,arm64
-Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
-      await Bun.write("/tmp/vscode.sources", sources + "\n");
-      await $`sudo cp /tmp/vscode.sources /etc/apt/sources.list.d/vscode.sources`.quiet();
+Signed-By: /etc/apt/keyrings/antigravity-repo-key.gpg`;
+      await Bun.write("/tmp/antigravity.sources", sources + "\n");
+      await $`sudo cp /tmp/antigravity.sources /etc/apt/sources.list.d/antigravity.sources`.quiet();
 
       await $`sudo apt update`;
-      await $`sudo apt install -y code`;
+      await $`sudo apt install -y antigravity`;
     },
     darwin: async () => {
-      await $`brew install --cask visual-studio-code`;
+      // Antigravity no macOS requer download manual do .dmg
+      // O setup abre o navegador para o usuário completar
+      log.warn("Antigravity no macOS requer instalação manual via .dmg");
+      log.info("Abrindo https://antigravity.google/download no seu navegador...");
+      await $`open https://antigravity.google/download`;
     },
     windows: async () => {
-      await winget("Microsoft.VisualStudioCode");
+      // Antigravity no Windows requer download manual do .exe
+      log.warn("Antigravity no Windows requer instalação manual via .exe");
+      log.info("Abrindo https://antigravity.google/download no seu navegador...");
+      await $`start https://antigravity.google/download`;
     },
   },
 ];
@@ -453,15 +464,19 @@ export const setups: Tool[] = [
     shouldSkip: async () => {
       if (!isWSL()) return true;
       const profile = getProfilePath();
-      return (
-        (await fileContains(profile, 'export EDITOR="code --wait"')) &&
-        (await fileContains(profile, "export BROWSER="))
-      );
+      // Só configura editor se VS Code estiver disponível (via Windows PATH)
+      const hasCode = await fileContains(profile, 'export EDITOR="code --wait"');
+      const hasBrowser = await fileContains(profile, "export BROWSER=");
+      return hasCode && hasBrowser;
     },
     linux: async () => {
-      await $`git config --global core.editor "code --wait"`.quiet();
+      const lines: string[] = [];
 
-      const lines = ['export EDITOR="code --wait"', 'export VISUAL="code --wait"'];
+      // Só configura editor se VS Code estiver disponível
+      if (has("code")) {
+        await $`git config --global core.editor "code --wait"`.quiet();
+        lines.push('export EDITOR="code --wait"', 'export VISUAL="code --wait"');
+      }
 
       const winUser = (await $`cmd.exe /c "echo %USERNAME%"`.text()).trim().replace(/\r/g, "");
       const chrome = `/mnt/c/Users/${winUser}/AppData/Local/Google/Chrome/Application/chrome.exe`;
@@ -477,6 +492,7 @@ export const setups: Tool[] = [
         log.info("Chrome ou Edge não encontrado no Windows, pulando BROWSER");
       }
 
+      if (lines.length === 0) return;
       return { profile: lines };
     },
   },
