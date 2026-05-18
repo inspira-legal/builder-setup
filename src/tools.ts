@@ -303,7 +303,17 @@ export const platformInstalls: Tool[] = [
 
   {
     name: "Antigravity",
-    verify: async () => Bun.which("antigravity"),
+    verify: async () => {
+      if (process.platform === "darwin") {
+        const app = "/Applications/Antigravity.app";
+        return (await fileExists(app)) ? app : null;
+      }
+      if (process.platform === "win32") {
+        const exe = `${HOME}\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe`;
+        return (await fileExists(exe)) ? exe : null;
+      }
+      return Bun.which("antigravity");
+    },
     shouldSkip: async () => {
       if (process.platform === "darwin") {
         return await fileExists("/Applications/Antigravity.app");
@@ -370,7 +380,7 @@ export const setups: Tool[] = [
     name: "fnm profile",
     shouldSkip: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
-      return fileContains(getProfilePath(), 'eval "$(fnm env');
+      return await fileContains(getProfilePath(), 'eval "$(fnm env');
     },
     linux: async () => ({
       profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
@@ -406,7 +416,7 @@ export const setups: Tool[] = [
     name: "fnm Git Bash",
     shouldSkip: async () => {
       if (!has("fnm")) return true;
-      return fileContains(`${HOME}/.bashrc`, "fnm env");
+      return await fileContains(`${HOME}/.bashrc`, "fnm env");
     },
     windows: async () => {
       const bashrc = `${HOME}/.bashrc`;
