@@ -160,7 +160,10 @@ export type GitHubCheckResult =
 export async function checkGitHubUser(username: string): Promise<GitHubCheckResult> {
   try {
     const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-      headers: { Accept: "application/vnd.github+json" },
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "builder-setup",
+      },
     });
     if (res.status === 200) {
       const body = (await res.json()) as { login: string };

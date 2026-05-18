@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/in
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
 ```
 
-> **O que esse comando faz?** Ele baixa um programa chamado `builder-setup`, que vai guiar você passo a passo. Não se preocipe — vou explicar cada parte antes de fazer qualquer coisa.
+> **O que esse comando faz?** Ele baixa um programa chamado `builder-setup`, que vai guiar você passo a passo. Não se preocupe — vou explicar cada parte antes de fazer qualquer coisa.
 
 ---
 

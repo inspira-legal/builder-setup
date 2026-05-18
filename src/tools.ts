@@ -229,7 +229,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     name: "Python",
     shouldSkip: async () => {
       if (process.platform === "win32") return has("python");
-      if (!has("uv")) return true;
+      // Se uv ainda não está instalado, não pular — deixa uv instalar primeiro,
+      // aí na próxima iteração do runTools Python será contado corretamente.
+      if (!has("uv")) return false;
       const result = await $`uv python list`.quiet().nothrow();
       return result.exitCode === 0 && result.stdout.toString().includes("3.13");
     },
