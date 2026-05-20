@@ -54,11 +54,9 @@ Vou perguntar seu nome de usuário no GitHub (aquele com `@`, tipo `@maria-silva
 ### Momento 3 — Ferramentas (Passo 1.2)
 Vou verificar o que já está no seu computador e instalar só o que falta.
 
-**Pergunta rápida:** antes de instalar, vou perguntar se você faz parte do **time de Plataforma** (infraestrutura, DevOps ou desenvolvimento de backend). Se sim, instalo ferramentas extras como Docker e Google Cloud SDK. Se não, instalo apenas o essencial para todos os setores.
-
 > **Nota:** Antigravity ainda requer instalação manual no macOS e Windows (o setup abre o navegador para você). No Linux, é instalado automaticamente via APT.
 
-### O que instalamos para todo mundo (essencial)
+### O que instalamos para você (essencial)
 
 | Ferramenta | Para que serve |
 |-------------|----------------|
@@ -68,14 +66,7 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 | pnpm | Instala bibliotecas de código |
 | uv + Python | Roda a LexFlow CLI e outras ferramentas internas |
 | Claude Code | Assistente de código que conversa com você no terminal |
-
-### O que instalamos apenas para Plataforma (opcional)
-
-| Ferramenta | Para que serve |
-|-------------|----------------|
-| Docker | Roda programas em caixinhas isoladas |
-| Google Cloud SDK | Conecta aos serviços da Google que usamos |
-| Antigravity | Editor AI-first (agentes, assistentes) |
+| Antigravity | Editor AI-first — porta de entrada pra trabalhar com agentes |
 
 ### LexFlow e Antigravity
 
@@ -85,7 +76,23 @@ Vou verificar o que já está no seu computador e instalar só o que falta.
 uv tool install lexflow-cli
 ```
 
-**Antigravity** é o editor recomendado pela Inspira para trabalhar com agentes de IA. Ele ainda está em lançamento — quando disponível, será o nosso padrão no lugar do VS Code.
+**Antigravity** é o editor recomendado pela Inspira para trabalhar com agentes de IA. Ele é o nosso padrão de entrada para quem está começando na Jornada Builder.
+
+### Para o time de Plataforma (opcional)
+
+Se você faz parte do time de **infraestrutura / DevOps / backend** e precisa de Docker + Google Cloud SDK, rode com a variável de ambiente:
+
+**Linux / macOS / WSL:**
+```bash
+BUILDER_PROFILE=platform curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:BUILDER_PROFILE='platform'; irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.ps1 | iex
+```
+
+Isso adiciona Docker e Google Cloud SDK ao final do setup. Sem essa variável, são pulados.
 
 > **Você pode rodar o builder-setup quantas vezes quiser.** Se algo já está instalado, eu pulo automaticamente.
 
@@ -93,7 +100,7 @@ uv tool install lexflow-cli
 
 ## 📊 Tabela de suporte por sistema
 
-### Ferramentas essenciais (todos os setores)
+### Ferramentas essenciais (todo mundo)
 
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
@@ -107,6 +114,7 @@ uv tool install lexflow-cli
 | pnpm | ✅ | ✅ | ✅ | ✅ |
 | uv + Python | ✅ | ✅ | ✅ | ✅ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ |
+| Antigravity | 🌐 | 🌐 | ✅ | ✅ |
 | Git config | ✅ | ✅ | ✅ | ✅ |
 | fnm profile | ✅ | ✅ | ✅ | ✅ |
 | fnm PowerShell | ✅ | ⬚ | ⬚ | ⬚ |
@@ -114,16 +122,16 @@ uv tool install lexflow-cli
 | fnm CMD | ✅ | ⬚ | ⬚ | ⬚ |
 | WSL config | ⬚ | ⬚ | ⬚ | ✅ |
 
-### Ferramentas de Plataforma (opcional)
+### Ferramentas de Plataforma (opt-in via `BUILDER_PROFILE=platform`)
 
 | | Windows | macOS | Linux | WSL |
 |--|---------|-------|-------|-----|
 | Docker | ✅ | ✅ | ✅ | ✅ |
 | Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
-| VS Code | ✅ | ✅ | ✅ | ⬚ |
 
 **Legenda:**
 - ✅ = eu instalo/configuro para você
+- 🌐 = abro o navegador para você baixar manualmente (instalação automatizada ainda não disponível)
 - ⬚ = não se aplica neste sistema
 - ⏳/✅ = depende se você já foi incluído(a) na organização Inspira
 

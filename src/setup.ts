@@ -358,28 +358,10 @@ async function main() {
 
   const failed: { name: string; output: string }[] = [];
 
-  // Pergunta se é time de Plataforma (infra / DevOps)
-  let isPlatformTeam = false;
-  console.log("");
-  console.log(`  ${B}Pergunta rápida:${N} você faz parte do time de Plataforma`);
-  console.log("  (infraestrutura, DevOps, ou desenvolvimento de backend)?");
-  console.log("");
-  while (true) {
-    const platAnswer = (await prompt("  (s)im / (n)ão: ")).toLowerCase();
-    if (platAnswer === "s" || platAnswer === "sim") {
-      isPlatformTeam = true;
-      break;
-    }
-    if (platAnswer === "n" || platAnswer === "não" || platAnswer === "nao") {
-      isPlatformTeam = false;
-      break;
-    }
-    console.log("");
-    console.log(`  ${Y}Resposta não reconhecida.${N} Use: s (sim) ou n (não)`);
-    console.log("");
-  }
-
-  const activeInstalls = isPlatformTeam ? [...coreInstalls, ...platformInstalls] : coreInstalls;
+  // Stack de Plataforma (Docker + Google Cloud SDK) é opt-in via env var.
+  // Default = só o essencial. Quem precisa: BUILDER_PROFILE=platform builder-setup
+  const isPlatformProfile = process.env.BUILDER_PROFILE === "platform";
+  const activeInstalls = isPlatformProfile ? [...coreInstalls, ...platformInstalls] : coreInstalls;
 
   console.log("");
   log.info("Verificando ferramentas...");
@@ -400,10 +382,10 @@ async function main() {
   let current = 0;
 
   console.log(`  ${C}▸ Passo 1.2 — Ferramentas${N}`);
-  if (isPlatformTeam) {
+  if (isPlatformProfile) {
     console.log("  Instalando stack completo (essencial + Plataforma).");
   } else {
-    console.log("  Instalando stack essencial para todos os setores.");
+    console.log("  Instalando stack essencial.");
   }
   console.log("");
 

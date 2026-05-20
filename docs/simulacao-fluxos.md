@@ -70,56 +70,54 @@ Baixando builder-setup para macOS (arm64)...
   Pressione Enter para continuar com a instalação...
 ```
 
-### Passo 3 — Pergunta sobre o time
+### Passo 3 — Instalação (progresso)
 
 ```
-  Pergunta rápida: você faz parte do time de Plataforma
-  (infraestrutura, DevOps, ou desenvolvimento de backend)?
-
-  (s)im / (n)ão: n
-
   Verificando ferramentas...
-    8 ferramenta(s) para instalar/configurar.
+    11 ferramenta(s) para instalar/configurar.
 
   ▸ Passo 1.2 — Ferramentas
-  Instalando stack essencial para todos os setores.
-```
+  Instalando stack essencial.
 
-### Passo 4 — Instalação (progresso)
-
-```
-  [1/10] Instalando System packages...
+  [1/11] Instalando System packages...
     [FEITO] System packages
 
-  [2/10] Instalando Git...
+  [2/11] Instalando Git...
     [FEITO] Git
 
-  [3/10] Instalando GitHub CLI...
+  [3/11] Instalando GitHub CLI...
     [FEITO] GitHub CLI
 
-  [4/10] Instalando fnm...
+  [4/11] Instalando fnm...
     [FEITO] fnm
 
-  [5/10] Instalando Node.js...
+  [5/11] Instalando Node.js...
     [FEITO] Node.js
 
-  [6/10] Instalando pnpm...
+  [6/11] Instalando pnpm...
     [FEITO] pnpm
 
-  [7/10] Instalando uv...
+  [7/11] Instalando uv...
     [FEITO] uv
 
-  [8/10] Instalando Python...
+  [8/11] Instalando Python...
     [FEITO] Python
 
-  [9/10] Configurando Git config...
-    [FEITO] Git config
+  [9/11] Instalando Claude Code...
+    [FEITO] Claude Code
 
-  [10/10] Configurando fnm profile...
-    [FEITO] fnm profile
+  [10/11] Instalando Antigravity...
+    [AVISO] Antigravity no macOS requer instalação manual via .dmg
+    [INFO] Abrindo https://antigravity.google/download no seu navegador...
+    [FEITO] Antigravity
+
+  [11/11] Configurando Git config...
+    [FEITO] Git config
 ```
 
-### Passo 5 — Verificação
+> Safari abre automaticamente em `antigravity.google/download` para a Maria baixar o `.dmg` e arrastar para `Applications`. O setup continua em paralelo — a fase `Verificação` no fim confere se o `.app` realmente apareceu.
+
+### Passo 4 — Verificação
 
 ```
   Verificação
@@ -131,9 +129,10 @@ Baixando builder-setup para macOS (arm64)...
   ✔  uv                   0.6.17
   ✔  Python               3.13.3
   ✔  Claude Code          /Users/maria/.claude/bin/claude
+  ✔  Antigravity          /Applications/Antigravity.app
 ```
 
-### Passo 6 — Resumo final
+### Passo 5 — Resumo final
 
 ```
   ========================================
@@ -155,7 +154,7 @@ Baixando builder-setup para macOS (arm64)...
   ▸ Próximo passo da jornada: criar conta e conectar
 ```
 
-### Passo 7 — Re-execução (dias depois, com conta)
+### Passo 6 — Re-execução (dias depois, com conta)
 
 ```
   $ builder-setup
@@ -201,20 +200,6 @@ Baixando builder-setup para macOS (arm64)...
   Te vejo no Passo 2 👋
 ```
 
-### Antigravity no macOS (instalação manual)
-
-**Se o usuário escolher time de Plataforma = sim:**
-
-```
-  [8/11] Instalando Antigravity...
-    [AVISO] Antigravity no macOS requer instalação manual via .dmg
-    [INFO] Abrindo https://antigravity.google/download no seu navegador...
-
-  # Safari abre automaticamente
-  # Usuário baixa o .dmg, arrasta para Applications
-  # Pronto!
-```
-
 ---
 
 ## 🪟 Windows (Windows 11, PowerShell)
@@ -251,59 +236,60 @@ Baixando builder-setup para Windows (x64)...
 
 ### Passo 2 — Identidade (igual ao macOS)
 
-### Passo 3 — Pergunta sobre o time
+### Passo 3 — Instalação (progresso, com setups Windows)
 
 ```
-  Pergunta rápida: você faz parte do time de Plataforma
-  (infraestrutura, DevOps, ou desenvolvimento de backend)?
-
-  (s)im / (n)ão: n
-
   Verificando ferramentas...
-    8 ferramenta(s) para instalar/configurar.
+    13 ferramenta(s) para instalar/configurar.
 
   ▸ Passo 1.2 — Ferramentas
-  Instalando stack essencial para todos os setores.
-```
+  Instalando stack essencial.
 
-### Passo 4 — Instalação (progresso, com setups Windows)
-
-```
-  [1/11] Instalando System packages...
-    (pulado — não se aplica no Windows)
-
-  [2/11] Instalando Git...
+  [1/13] Instalando Git...
     [FEITO] Git
 
-  [3/11] Instalando GitHub CLI...
+  [2/13] Instalando GitHub CLI...
     [FEITO] GitHub CLI
 
-  [4/11] Instalando fnm...
+  [3/13] Instalando fnm...
     [FEITO] fnm
 
-  [5/11] Instalando Node.js...
+  [4/13] Instalando Node.js...
     [FEITO] Node.js
 
-  [6/11] Instalando pnpm...
+  [5/13] Instalando pnpm...
     [FEITO] pnpm
 
-  [7/11] Instalando uv...
+  [6/13] Instalando uv...
     [FEITO] uv
 
-  [8/11] Instalando Python...
+  [7/13] Instalando Python...
     [FEITO] Python
 
-  [9/11] Configurando Git config...
+  [8/13] Instalando Claude Code...
+    [FEITO] Claude Code
+
+  [9/13] Instalando Antigravity...
+    [AVISO] Antigravity no Windows requer instalação manual via .exe
+    [INFO] Abrindo https://antigravity.google/download no seu navegador...
+    [FEITO] Antigravity
+
+  [10/13] Configurando Git config...
     [FEITO] Git config
 
-  [10/11] Configurando fnm PowerShell...
+  [11/13] Configurando fnm PowerShell...
     [FEITO] fnm PowerShell
 
-  [11/11] Configurando fnm CMD...
+  [12/13] Configurando fnm Git Bash...
+    [FEITO] fnm Git Bash
+
+  [13/13] Configurando fnm CMD...
     [FEITO] fnm CMD
 ```
 
-### Passo 5 — Verificação
+> Edge/Chrome abre automaticamente em `antigravity.google/download` para o João baixar e executar o `.exe`. A fase `Verificação` confere se o `Antigravity.exe` apareceu em `%LOCALAPPDATA%\Programs\Antigravity`.
+
+### Passo 4 — Verificação
 
 ```
   Verificação
@@ -315,9 +301,10 @@ Baixando builder-setup para Windows (x64)...
   ✔  uv                   0.6.17
   ✔  Python               C:\Users\joao\.local\bin\python.exe
   ✔  Claude Code          C:\Users\joao\.claude\bin\claude.exe
+  ✔  Antigravity          C:\Users\joao\AppData\Local\Programs\Antigravity\Antigravity.exe
 ```
 
-### Passo 6 — Resumo final (igual ao macOS)
+### Passo 5 — Resumo final (igual ao macOS)
 
 ```
   ========================================
@@ -339,25 +326,11 @@ Baixando builder-setup para Windows (x64)...
   ▸ Próximo passo da jornada: criar conta e conectar
 ```
 
-### Passo 7 — Re-execução (igual ao macOS)
+### Passo 6 — Re-execução (igual ao macOS)
 
 ```
   PS C:\Users\joao> builder-setup
   # (mesmo fluxo de verificação rápida, sem reinstalar nada)
-```
-
-### Antigravity no Windows (instalação manual)
-
-**Se o usuário escolher time de Plataforma = sim:**
-
-```
-  [9/12] Instalando Antigravity...
-    [AVISO] Antigravity no Windows requer instalação manual via .exe
-    [INFO] Abrindo https://antigravity.google/download no seu navegador...
-
-  # Edge/Chrome abre automaticamente
-  # Usuário baixa o .exe, executa o instalador
-  # Pronto!
 ```
 
 ---
@@ -368,12 +341,12 @@ Baixando builder-setup para Windows (x64)...
 |---------|-------|---------|
 | **Comando inicial** | `curl ... \| bash` | `irm ... \| iex` |
 | **System packages** | Homebrew | ⬚ Não aplica |
-| **fnm profile** | `.zshrc` | PowerShell + CMD |
+| **fnm profile** | `.zshrc` | PowerShell + Git Bash + CMD |
 | **Linux dependencies** | ⬚ Não aplica | ⬚ Não aplica |
 | **Python path** | `python3` | `python` (via uv) |
 | **WSL config** | ⬚ Não aplica | ⬚ Não aplica (só se WSL) |
-| **Antigravity** | Download .dmg manual | Download .exe manual |
-| **Editor padrão** | code (se VS Code instalado) | code (se VS Code instalado) |
+| **Antigravity** | Download `.dmg` manual (navegador abre) | Download `.exe` manual (navegador abre) |
+| **Editor padrão** | Antigravity (entrada Jornada Builder) | Antigravity (entrada Jornada Builder) |
 | **Novo terminal** | "Abra um novo Terminal" | "Abra novo PowerShell/Git Bash" |
 
 ---
@@ -381,25 +354,21 @@ Baixando builder-setup para Windows (x64)...
 ## 🎯 Cenários específicos por perfil
 
 ### Perfil 1: Advogado (não-técnico, macOS)
-- ❌ Não é Plataforma
-- ❌ Sem conta GitHub
-- ✅ Instala: Git, GitHub CLI, fnm, Node.js, pnpm, uv, Python, Claude Code
-- ⏳ Pula: Docker, GCloud SDK, Antigravity
+- ❌ Sem conta GitHub ainda
+- ✅ Instala: Git, GitHub CLI, fnm, Node.js, pnpm, uv, Python, Claude Code, Antigravity
 - 📋 Mensagem final: "Crie conta no GitHub e volte"
 
-### Perfil 2: DevOps (técnico, Windows + WSL)
-- ✅ É Plataforma
+### Perfil 2: Produto (semi-técnico, macOS)
 - ✅ Tem conta GitHub
-- ✅ Instala TUDO: core + Docker + GCloud SDK + Antigravity
+- ✅ Instala: stack essencial completo (mesmo conjunto)
+- 📋 Mensagem final: "Tudo pronto! Clone o projeto"
+
+### Perfil 3: DevOps (técnico, Windows + WSL)
+- ✅ Tem conta GitHub
+- 🔧 Roda com `BUILDER_PROFILE=platform` no comando inicial
+- ✅ Instala TUDO: stack essencial + Docker + Google Cloud SDK
 - 🐧 WSL config automático (editor + browser)
 - 📋 Mensagem final: "Tudo pronto! Abra novo terminal"
-
-### Perfil 3: Produto (semi-técnico, macOS)
-- ❌ Não é Plataforma
-- ✅ Tem conta GitHub
-- ✅ Instala: core stack
-- ⏳ Pula: Docker, GCloud SDK
-- 📋 Mensagem final: "Tudo pronto! Clone o projeto"
 
 ---
 
@@ -408,13 +377,11 @@ Baixando builder-setup para Windows (x64)...
 | Item | macOS | Windows | Linux | WSL |
 |------|-------|---------|-------|-----|
 | Identidade GitHub | ✅ | ✅ | ✅ | ✅ |
-| Pergunta Plataforma | ✅ | ✅ | ✅ | ✅ |
-| Core installs | ✅ | ✅ | ✅ | ✅ |
-| Platform installs | ✅ | ✅ | ✅ | ✅ |
-| Setups específicos | .zshrc | PS/CMD | .bashrc | WSL config |
+| Stack essencial | ✅ | ✅ | ✅ | ✅ |
+| Antigravity (core, novato) | 🌐 .dmg | 🌐 .exe | ✅ APT | ✅ APT |
+| Stack Plataforma (`BUILDER_PROFILE=platform`) | ✅ | ✅ | ✅ | ✅ |
+| Setups específicos | .zshrc | PS + Git Bash + CMD | .bashrc | WSL config |
 | Verificação automática | ✅ | ✅ | ✅ | ✅ |
-| Antigravity Linux (APT) | ⬚ | ⬚ | ✅ | ⬚ |
-| Antigravity mac/Win (manual) | ✅ | ✅ | ⬚ | ⬚ |
 | Re-execução rápida | ✅ | ✅ | ✅ | ✅ |
 | Mensagens contextualizadas | ✅ | ✅ | ✅ | ✅ |
 

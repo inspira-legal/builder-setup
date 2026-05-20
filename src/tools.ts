@@ -261,45 +261,6 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
     },
   },
-];
-
-// ── Platform installs (time de Plataforma / DevOps) ──
-
-export const platformInstalls: Tool[] = [
-  {
-    name: "Docker",
-    shouldSkip: async () => has("docker"),
-    verify: async () => Bun.which("docker"),
-    linux: async () => {
-      if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
-        await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
-        log.done("systemd habilitado em wsl.conf");
-      }
-      await installDockerApt();
-    },
-    darwin: async () => {
-      await $`brew install --cask docker-desktop`;
-    },
-    windows: async () => {
-      await winget("Docker.DockerDesktop");
-    },
-  },
-
-  {
-    name: "Google Cloud SDK",
-    verify: async () => Bun.which("gcloud"),
-    shouldSkip: async () =>
-      has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
-    linux: async () => {
-      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
-    },
-    darwin: async () => {
-      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
-    },
-    windows: async () => {
-      await winget("Google.CloudSDK");
-    },
-  },
 
   {
     name: "Antigravity",
@@ -351,6 +312,45 @@ Signed-By: /etc/apt/keyrings/antigravity-repo-key.gpg`;
       log.warn("Antigravity no Windows requer instalação manual via .exe");
       log.info("Abrindo https://antigravity.google/download no seu navegador...");
       await $`start https://antigravity.google/download`;
+    },
+  },
+];
+
+// ── Platform installs (opt-in via BUILDER_PROFILE=platform) ──
+
+export const platformInstalls: Tool[] = [
+  {
+    name: "Docker",
+    shouldSkip: async () => has("docker"),
+    verify: async () => Bun.which("docker"),
+    linux: async () => {
+      if (isWSL() && !(await fileContains("/etc/wsl.conf", "systemd=true"))) {
+        await $`printf '\n[boot]\nsystemd=true\n' | sudo tee -a /etc/wsl.conf > /dev/null`;
+        log.done("systemd habilitado em wsl.conf");
+      }
+      await installDockerApt();
+    },
+    darwin: async () => {
+      await $`brew install --cask docker-desktop`;
+    },
+    windows: async () => {
+      await winget("Docker.DockerDesktop");
+    },
+  },
+
+  {
+    name: "Google Cloud SDK",
+    verify: async () => Bun.which("gcloud"),
+    shouldSkip: async () =>
+      has("gcloud") || (await fileExists(`${HOME}/google-cloud-sdk/bin/gcloud`)),
+    linux: async () => {
+      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
+    },
+    darwin: async () => {
+      await $`curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts`;
+    },
+    windows: async () => {
+      await winget("Google.CloudSDK");
     },
   },
 ];
