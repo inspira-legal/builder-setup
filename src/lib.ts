@@ -170,10 +170,24 @@ export async function checkGitHubUser(username: string): Promise<GitHubCheckResu
       return { status: "exists", canonical: body.login };
     }
     if (res.status === 404) return { status: "not_found" };
-    // Rate limit ou outro erro HTTP
-    const reason =
-      res.status === 403 ? `HTTP 403 (rate limit ou acesso negado)` : `HTTP ${res.status}`;
-    return { status: "unreachable", reason };
+    if (res.status === 403) {
+      // Rate limit é o 403 mais comum sem auth; checa header pra distinguir
+      const remaining = res.headers.get("X-RateLimit-Remaining");
+      if (remaining === "0") {
+        const resetTimestamp = Number(res.headers.get("X-RateLimit-Reset") ?? 0);
+        const minutesUntilReset =
+          resetTimestamp > 0
+            ? Math.max(1, Math.ceil((resetTimestamp * 1000 - Date.now()) / 60_000))
+            : null;
+        const wait = minutesUntilReset ? ` (libera em ~${minutesUntilReset}min)` : "";
+        return {
+          status: "unreachable",
+          reason: `rate limit do GitHub atingido${wait}`,
+        };
+      }
+      return { status: "unreachable", reason: "HTTP 403 (acesso negado)" };
+    }
+    return { status: "unreachable", reason: `HTTP ${res.status}` };
   } catch (err) {
     return { status: "unreachable", reason: (err as Error).message };
   }
