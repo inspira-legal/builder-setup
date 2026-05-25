@@ -34,7 +34,7 @@ function printWelcomeBox() {
   console.log("  |    • Entender nossos processos de trabalho               |");
   console.log("  |                                                          |");
   console.log(`  |  ${C}Não se preocupe${N}: vou guiar você por cada parte.       |`);
-  console.log("  |  Nada será feito sem que você saiba o que está acontecendo.|");
+  console.log("  |  Nada será feito sem que você seja avisado primeiro.   |");
   console.log("  +----------------------------------------------------------+");
   console.log("");
 }
@@ -170,6 +170,41 @@ async function handleNoAccount(): Promise<boolean> {
   }
 }
 
+async function offerGhAuthLogin(): Promise<boolean> {
+  const Y = "\x1b[33m";
+  const N = "\x1b[0m";
+  const B = "\x1b[1m";
+
+  console.log("");
+  console.log(`  ${Y}⚠${N} O gh CLI precisa estar autenticado para verificar`);
+  console.log("     sua participação na organização Inspira.");
+  console.log("");
+  const answer = (
+    await prompt(`  Autenticar agora com ${B}gh auth login${N}? (S/n): `)
+  ).toLowerCase();
+  if (answer === "n" || answer === "não" || answer === "nao") {
+    return false;
+  }
+  console.log("");
+  try {
+    const proc = Bun.spawn(["gh", "auth", "login"], {
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const exitCode = await proc.exited;
+    console.log("");
+    if (exitCode !== 0) {
+      log.warn(`gh auth login falhou (exit ${exitCode}).`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    log.warn(`Falha ao executar gh auth login: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 async function verifyOrgAccess(username: string): Promise<{ verified: boolean }> {
   const Y = "\x1b[33m";
   const G = "\x1b[32m";
@@ -180,7 +215,14 @@ async function verifyOrgAccess(username: string): Promise<{ verified: boolean }>
 
   // Tentativa 1: se gh CLI já estiver disponível e autenticado, usa ele
   if (Bun.which("gh") !== null) {
-    const ghResult = await checkGitHubOrgMembership();
+    let ghResult = await checkGitHubOrgMembership();
+
+    // Se gh está instalado mas não autenticado, oferece login interativo agora.
+    if (ghResult.status === "unverified" && ghResult.reason === "gh CLI não autenticado") {
+      const ok = await offerGhAuthLogin();
+      if (ok) ghResult = await checkGitHubOrgMembership();
+    }
+
     if (ghResult.status === "member") {
       await saveConfig({ githubOrgVerified: true, githubOrgPending: false });
       log.done("Acesso confirmado à organização Inspira");
@@ -405,13 +447,20 @@ async function main() {
   await runTools(setups, "Configurando");
 
   // Re-verificação automática de org: se gh acabou de ser instalado,
-  // tentamos confirmar silenciosamente sem perguntar nada ao usuário.
+  // tentamos confirmar. Se faltar auth, oferece `gh auth login` interativo —
+  // sem isso a verificação automática nunca dispara na 1ª execução.
   if (identity.username && !identity.orgVerified && Bun.which("gh") !== null) {
-    const ghResult = await checkGitHubOrgMembership();
+    let ghResult = await checkGitHubOrgMembership();
+
+    if (ghResult.status === "unverified" && ghResult.reason === "gh CLI não autenticado") {
+      const ok = await offerGhAuthLogin();
+      if (ok) ghResult = await checkGitHubOrgMembership();
+    }
+
     if (ghResult.status === "member") {
       await saveConfig({ githubOrgVerified: true, githubOrgPending: false });
       identity.orgVerified = true;
-      log.done("Acesso à organização Inspira confirmado automaticamente após instalação do gh");
+      log.done("Acesso à organização Inspira confirmado");
       console.log("");
     }
   }

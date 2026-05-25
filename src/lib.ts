@@ -199,8 +199,13 @@ export async function checkGitHubOrgMembership(): Promise<GitHubOrgResult> {
 
     const stderr = await new Response(proc.stderr).text();
 
-    // Erros de autenticação / token inválido / não logado
+    // Erros de autenticação / token inválido / não logado.
+    // exit=4 e mensagens "gh auth login"/"GH_TOKEN" cobrem o caso de `gh` recém-instalado
+    // (output real do gh 2.x quando nenhum host foi autenticado ainda).
     if (
+      exitCode === 4 ||
+      stderr.includes("gh auth login") ||
+      stderr.includes("GH_TOKEN") ||
       stderr.includes("not logged into any GitHub host") ||
       stderr.includes("authentication required") ||
       stderr.includes("HTTP 401")
