@@ -276,6 +276,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       return Bun.which("antigravity");
     },
     shouldSkip: async () => {
+      // No WSL, Antigravity deve ser instalado no host Windows e acessado via
+      // PATH interop — não faz sentido instalar uma cópia dentro do Ubuntu.
+      if (isWSL()) return true;
       if (process.platform === "darwin") {
         return await fileExists("/Applications/Antigravity.app");
       }
@@ -285,20 +288,12 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       return has("antigravity");
     },
     linux: async () => {
-      await $`sudo mkdir -p -m 755 /etc/apt/keyrings`.quiet();
-      await $`curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg`.quiet();
-
-      const sources = `Types: deb
-URIs: https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/
-Suites: antigravity-debian
-Components: main
-Architectures: amd64,arm64
-Signed-By: /etc/apt/keyrings/antigravity-repo-key.gpg`;
-      await Bun.write("/tmp/antigravity.sources", sources + "\n");
-      await $`sudo cp /tmp/antigravity.sources /etc/apt/sources.list.d/antigravity.sources`.quiet();
-
-      await $`sudo apt update`;
-      await $`sudo apt install -y antigravity`;
+      // O repo APT do Antigravity ainda não está publicado publicamente
+      // (us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev retorna 404).
+      // Até existir um canal oficial, tratamos igual macOS/Windows: avisa e abre o navegador.
+      log.warn("Antigravity no Linux ainda não tem instalação automatizada");
+      log.info("Acompanhe https://antigravity.google/ para atualizações");
+      await $`xdg-open https://antigravity.google/download`.nothrow();
     },
     darwin: async () => {
       // Antigravity no macOS requer download manual do .dmg
@@ -474,18 +469,25 @@ export const setups: Tool[] = [
     shouldSkip: async () => {
       if (!isWSL()) return true;
       const profile = getProfilePath();
-      // Só configura editor se VS Code estiver disponível (via Windows PATH)
-      const hasCode = await fileContains(profile, 'export EDITOR="code --wait"');
       const hasBrowser = await fileContains(profile, "export BROWSER=");
+      // Quando `code` não está disponível no PATH, EDITOR não é configurado por nós;
+      // basta BROWSER estar definido pra considerar a etapa completa.
+      if (!has("code")) return hasBrowser;
+      const hasCode = await fileContains(profile, 'export EDITOR="code --wait"');
       return hasCode && hasBrowser;
     },
     linux: async () => {
       const lines: string[] = [];
 
-      // Só configura editor se VS Code estiver disponível
+      // Só configura editor se VS Code estiver disponível (via Windows PATH).
+      // Com VS Code fora do tier essencial, usuários sem `code` no PATH ficavam
+      // sem EDITOR silenciosamente — agora emitimos um aviso explícito.
       if (has("code")) {
         await $`git config --global core.editor "code --wait"`.quiet();
         lines.push('export EDITOR="code --wait"', 'export VISUAL="code --wait"');
+      } else {
+        log.warn("VS Code não encontrado no PATH — EDITOR não foi configurado.");
+        log.info("Defina EDITOR manualmente no seu shell se quiser um editor GUI.");
       }
 
       const winUser = (await $`cmd.exe /c "echo %USERNAME%"`.text()).trim().replace(/\r/g, "");
