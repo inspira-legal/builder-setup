@@ -286,11 +286,13 @@ async function verifyOrgAccess(username: string): Promise<{ verified: boolean }>
           console.log(`    "Olá! Meu username no GitHub é ${B}${username}${N}."`);
           console.log(`    "Poderia me incluir na organização inspira-legal?"`);
           console.log("");
-          await pause("  ⏎ Pressione Enter quando tiver enviado...");
+          await pause("  ⏎ Pressione Enter depois de enviar a mensagem...");
           console.log("");
-          console.log("  Salvando seu progresso. Você pode continuar instalando");
-          console.log("  as ferramentas agora. Rode o builder-setup novamente depois");
-          console.log("  que HOLANDA confirmar sua inclusão.");
+          console.log("  Vou continuar instalando as ferramentas agora.");
+          console.log("  Depois que HOLANDA confirmar sua inclusão, basta:");
+          console.log(`    1. Rodar ${B}gh auth login${N} (autenticar o GitHub CLI)`);
+          console.log("    2. Rodar o builder-setup novamente");
+          console.log("  Eu verifico automaticamente se você já está na org.");
           console.log("");
           await saveConfig({ githubOrgPending: true, githubOrgVerified: false });
           return { verified: false };
@@ -335,18 +337,13 @@ async function main() {
   const B = "\x1b[1m";
   const N = "\x1b[0m";
 
-  printWelcomeBox();
-  await pause("  Pressione Enter para iniciar (ou Ctrl+C para sair)...");
-  console.log("");
-
-  const identity = await ensureGitHubAccount();
-
-  // Pre-cache sudo on linux (macOS tools don't need sudo)
+  // Pre-cache sudo no Linux ANTES de qualquer prompt longo — evita travar o setup
+  // se o usuário sair da frente do terminal durante os prompts de identidade.
   let sudoKeepAlive: Timer | undefined;
   if (platform === "linux") {
-    console.log("");
     log.info("Este script precisa de acesso sudo para instalar pacotes.");
     await $`sudo -v`;
+    console.log("");
 
     sudoKeepAlive = setInterval(() => {
       Bun.spawn(["sudo", "-n", "true"], {
@@ -356,30 +353,27 @@ async function main() {
     }, 50_000);
   }
 
-  const failed: { name: string; output: string }[] = [];
-
-  // Pergunta se é time de Plataforma (infra / DevOps)
-  let isPlatformTeam = false;
-  console.log("");
-  console.log(`  ${B}Pergunta rápida:${N} você faz parte do time de Plataforma`);
-  console.log("  (infraestrutura, DevOps, ou desenvolvimento de backend)?");
-  console.log("");
-  while (true) {
-    const platAnswer = (await prompt("  (s)im / (n)ão: ")).toLowerCase();
-    if (platAnswer === "s" || platAnswer === "sim") {
-      isPlatformTeam = true;
-      break;
-    }
-    if (platAnswer === "n" || platAnswer === "não" || platAnswer === "nao") {
-      isPlatformTeam = false;
-      break;
-    }
+  // 1ª execução: welcome box completo. Re-execuções: header curto.
+  const existingConfig = await loadConfig();
+  const isFirstRun = Object.keys(existingConfig).length === 0;
+  if (isFirstRun) {
+    printWelcomeBox();
+    await pause("  Pressione Enter para iniciar (ou Ctrl+C para sair)...");
     console.log("");
-    console.log(`  ${Y}Resposta não reconhecida.${N} Use: s (sim) ou n (não)`);
+  } else {
+    console.log("");
+    console.log(`  ${C}▸ Builder Setup — retomando${N}`);
     console.log("");
   }
 
-  const activeInstalls = isPlatformTeam ? [...coreInstalls, ...platformInstalls] : coreInstalls;
+  const identity = await ensureGitHubAccount();
+
+  const failed: { name: string; output: string }[] = [];
+
+  // Stack de Plataforma (Docker + Google Cloud SDK) é opt-in via env var.
+  // Default = só o essencial. Quem precisa: BUILDER_PROFILE=platform builder-setup
+  const isPlatformProfile = process.env.BUILDER_PROFILE === "platform";
+  const activeInstalls = isPlatformProfile ? [...coreInstalls, ...platformInstalls] : coreInstalls;
 
   console.log("");
   log.info("Verificando ferramentas...");
@@ -400,10 +394,10 @@ async function main() {
   let current = 0;
 
   console.log(`  ${C}▸ Passo 1.2 — Ferramentas${N}`);
-  if (isPlatformTeam) {
+  if (isPlatformProfile) {
     console.log("  Instalando stack completo (essencial + Plataforma).");
   } else {
-    console.log("  Instalando stack essencial para todos os setores.");
+    console.log("  Instalando stack essencial.");
   }
   console.log("");
 
@@ -417,9 +411,12 @@ async function main() {
       current++;
       log.step(`${verb} ${tool.name}...`, { current, total });
       try {
+        // Captura mtime do profile pra detectar se o instalador modificou
+        // .bashrc/.zshrc externamente (uv, pnpm, fnm via curl|bash fazem isso).
+        const profileMtimeBefore = Bun.file(profilePath).lastModified;
+
         const result = await installer();
 
-        // Write profile lines if returned
         if (result && result.profile.length > 0) {
           for (const line of result.profile) {
             if (!(await fileContains(profilePath, line))) {
@@ -429,10 +426,19 @@ async function main() {
           log.info(`Atualizado ${profilePath}`);
         }
 
+        const profileMtimeAfter = Bun.file(profilePath).lastModified;
+
         log.done(tool.name);
         executed++;
 
-        await refreshPath();
+        // refreshPath só quando o profile mudou (lines escritas por nós ou pelo
+        // instalador externo). winget/apt/brew colocam binários em paths já
+        // presentes em $PATH e não precisam de refresh.
+        const profileChanged =
+          (result && result.profile.length > 0) || profileMtimeAfter !== profileMtimeBefore;
+        if (profileChanged) {
+          await refreshPath();
+        }
       } catch (err) {
         const e = err as Error & { stderr?: Buffer; stdout?: Buffer };
         const raw = e.stderr?.toString().trim() || e.stdout?.toString().trim() || e.message;
@@ -590,7 +596,8 @@ async function main() {
     console.log("  Ação necessária:");
     console.log("    1. Confirme com HOLANDA que você foi incluído(a) na");
     console.log("       organização inspira-legal no GitHub");
-    console.log("    2. Rode builder-setup novamente para verificar");
+    console.log(`    2. Rode ${B}gh auth login${N} para autenticar o GitHub CLI`);
+    console.log("    3. Rode builder-setup novamente para verificar");
     console.log("");
     console.log(`  ${C}▸ Próximo passo da jornada:${N} concluir sua identidade`);
   } else if (identityMissing) {

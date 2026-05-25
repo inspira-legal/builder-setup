@@ -229,7 +229,9 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
     name: "Python",
     shouldSkip: async () => {
       if (process.platform === "win32") return has("python");
-      if (!has("uv")) return true;
+      // Se uv ainda não está instalado, não pular — deixa uv instalar primeiro,
+      // aí na próxima iteração do runTools Python será contado corretamente.
+      if (!has("uv")) return false;
       const result = await $`uv python list`.quiet().nothrow();
       return result.exitCode === 0 && result.stdout.toString().includes("3.13");
     },
@@ -259,9 +261,57 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
     },
   },
+
+  {
+    name: "Antigravity",
+    verify: async () => {
+      if (process.platform === "darwin") {
+        const app = "/Applications/Antigravity.app";
+        return (await fileExists(app)) ? app : null;
+      }
+      if (process.platform === "win32") {
+        const exe = `${HOME}\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe`;
+        return (await fileExists(exe)) ? exe : null;
+      }
+      return Bun.which("antigravity");
+    },
+    shouldSkip: async () => {
+      // No WSL, Antigravity deve ser instalado no host Windows e acessado via
+      // PATH interop — não faz sentido instalar uma cópia dentro do Ubuntu.
+      if (isWSL()) return true;
+      if (process.platform === "darwin") {
+        return await fileExists("/Applications/Antigravity.app");
+      }
+      if (process.platform === "win32") {
+        return await fileExists(`${HOME}\\AppData\\Local\\Programs\\Antigravity\\Antigravity.exe`);
+      }
+      return has("antigravity");
+    },
+    linux: async () => {
+      // O repo APT do Antigravity ainda não está publicado publicamente
+      // (us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev retorna 404).
+      // Até existir um canal oficial, tratamos igual macOS/Windows: avisa e abre o navegador.
+      log.warn("Antigravity no Linux ainda não tem instalação automatizada");
+      log.info("Acompanhe https://antigravity.google/ para atualizações");
+      await $`xdg-open https://antigravity.google/download`.nothrow();
+    },
+    darwin: async () => {
+      // Antigravity no macOS requer download manual do .dmg
+      // O setup abre o navegador para o usuário completar
+      log.warn("Antigravity no macOS requer instalação manual via .dmg");
+      log.info("Abrindo https://antigravity.google/download no seu navegador...");
+      await $`open https://antigravity.google/download`;
+    },
+    windows: async () => {
+      // Antigravity no Windows requer download manual do .exe
+      log.warn("Antigravity no Windows requer instalação manual via .exe");
+      log.info("Abrindo https://antigravity.google/download no seu navegador...");
+      await $`start https://antigravity.google/download`;
+    },
+  },
 ];
 
-// ── Platform installs (time de Plataforma / DevOps) ──
+// ── Platform installs (opt-in via BUILDER_PROFILE=platform) ──
 
 export const platformInstalls: Tool[] = [
   {
@@ -298,38 +348,6 @@ export const platformInstalls: Tool[] = [
       await winget("Google.CloudSDK");
     },
   },
-
-  {
-    name: "VS Code",
-    verify: async () => Bun.which("code"),
-    shouldSkip: async () => {
-      // On WSL, VS Code comes from Windows via PATH interop
-      if (isWSL()) return true;
-      return has("code");
-    },
-    linux: async () => {
-      await $`curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
-      await $`sudo chmod go+r /etc/apt/keyrings/packages.microsoft.gpg`.quiet();
-
-      const sources = `Types: deb
-URIs: https://packages.microsoft.com/repos/code
-Suites: stable
-Components: main
-Architectures: amd64,arm64
-Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
-      await Bun.write("/tmp/vscode.sources", sources + "\n");
-      await $`sudo cp /tmp/vscode.sources /etc/apt/sources.list.d/vscode.sources`.quiet();
-
-      await $`sudo apt update`;
-      await $`sudo apt install -y code`;
-    },
-    darwin: async () => {
-      await $`brew install --cask visual-studio-code`;
-    },
-    windows: async () => {
-      await winget("Microsoft.VisualStudioCode");
-    },
-  },
 ];
 
 // ── Setups ──
@@ -357,7 +375,7 @@ export const setups: Tool[] = [
     name: "fnm profile",
     shouldSkip: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
-      return fileContains(getProfilePath(), 'eval "$(fnm env');
+      return await fileContains(getProfilePath(), 'eval "$(fnm env');
     },
     linux: async () => ({
       profile: ['export PATH="$HOME/.local/share/fnm:$PATH"', 'eval "$(fnm env --use-on-cd)"'],
@@ -393,7 +411,7 @@ export const setups: Tool[] = [
     name: "fnm Git Bash",
     shouldSkip: async () => {
       if (!has("fnm")) return true;
-      return fileContains(`${HOME}/.bashrc`, "fnm env");
+      return await fileContains(`${HOME}/.bashrc`, "fnm env");
     },
     windows: async () => {
       const bashrc = `${HOME}/.bashrc`;
@@ -451,15 +469,26 @@ export const setups: Tool[] = [
     shouldSkip: async () => {
       if (!isWSL()) return true;
       const profile = getProfilePath();
-      return (
-        (await fileContains(profile, 'export EDITOR="code --wait"')) &&
-        (await fileContains(profile, "export BROWSER="))
-      );
+      const hasBrowser = await fileContains(profile, "export BROWSER=");
+      // Quando `code` não está disponível no PATH, EDITOR não é configurado por nós;
+      // basta BROWSER estar definido pra considerar a etapa completa.
+      if (!has("code")) return hasBrowser;
+      const hasCode = await fileContains(profile, 'export EDITOR="code --wait"');
+      return hasCode && hasBrowser;
     },
     linux: async () => {
-      await $`git config --global core.editor "code --wait"`.quiet();
+      const lines: string[] = [];
 
-      const lines = ['export EDITOR="code --wait"', 'export VISUAL="code --wait"'];
+      // Só configura editor se VS Code estiver disponível (via Windows PATH).
+      // Com VS Code fora do tier essencial, usuários sem `code` no PATH ficavam
+      // sem EDITOR silenciosamente — agora emitimos um aviso explícito.
+      if (has("code")) {
+        await $`git config --global core.editor "code --wait"`.quiet();
+        lines.push('export EDITOR="code --wait"', 'export VISUAL="code --wait"');
+      } else {
+        log.warn("VS Code não encontrado no PATH — EDITOR não foi configurado.");
+        log.info("Defina EDITOR manualmente no seu shell se quiser um editor GUI.");
+      }
 
       const winUser = (await $`cmd.exe /c "echo %USERNAME%"`.text()).trim().replace(/\r/g, "");
       const chrome = `/mnt/c/Users/${winUser}/AppData/Local/Google/Chrome/Application/chrome.exe`;
@@ -475,6 +504,7 @@ export const setups: Tool[] = [
         log.info("Chrome ou Edge não encontrado no Windows, pulando BROWSER");
       }
 
+      if (lines.length === 0) return;
       return { profile: lines };
     },
   },
