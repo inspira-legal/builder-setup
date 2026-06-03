@@ -37,6 +37,7 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 | Google Cloud SDK | ✅ | ✅ | ✅ | ✅ |
 | VS Code | ✅ | ✅ | ✅ | ⬚ |
 | Claude Code | ✅ | ✅ | ✅ | ✅ |
+| lexflow | ✅ | ✅ | ✅ | ✅ |
 | Git config | ✅ | ✅ | ✅ | ✅ |
 | fnm profile | ✅ | ✅ | ✅ | ✅ |
 | pyenv profile | ⬚ | ✅ | ✅ | ✅ |

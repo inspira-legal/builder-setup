@@ -365,6 +365,23 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
     },
   },
+
+  {
+    name: "lexflow",
+    verify: async () => Bun.which("lexflow"),
+    shouldSkip: async () => has("lexflow") || (await fileExists(`${HOME}/.local/bin/lexflow`)),
+    linux: async () => {
+      // LEXFLOW_NO_LOGIN skips the installer's interactive browser login;
+      // the dev runs `lexflow login` when they're ready.
+      await $`curl -fsSL https://lexflow.internal.inspira.legal/install.sh | LEXFLOW_NO_LOGIN=1 bash`;
+    },
+    darwin: async () => {
+      await $`curl -fsSL https://lexflow.internal.inspira.legal/install.sh | LEXFLOW_NO_LOGIN=1 bash`;
+    },
+    windows: async () => {
+      await $`powershell -NoProfile -Command "$env:LEXFLOW_NO_LOGIN='1'; irm https://lexflow.internal.inspira.legal/install.ps1 | iex"`;
+    },
+  },
 ];
 
 // ── Setup list ──
