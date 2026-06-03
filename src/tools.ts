@@ -379,7 +379,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`curl -fsSL https://lexflow.internal.inspira.legal/install.sh | LEXFLOW_NO_LOGIN=1 bash`;
     },
     windows: async () => {
-      await $`powershell -NoProfile -Command "$env:LEXFLOW_NO_LOGIN='1'; irm https://lexflow.internal.inspira.legal/install.ps1 | iex"`;
+      await $`powershell -NoProfile -Command "\$env:LEXFLOW_NO_LOGIN='1'; irm https://lexflow.internal.inspira.legal/install.ps1 | iex"`;
     },
   },
 ];
