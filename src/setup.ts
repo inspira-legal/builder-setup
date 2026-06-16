@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { openSync, closeSync } from "node:fs";
 import { installs, setups } from "./tools";
 import {
   type Tool,
@@ -7,10 +8,68 @@ import {
   isWSL,
   getProfilePath,
   fileContains,
+  fileExists,
   appendFile,
   refreshPath,
   log,
+  HOME,
 } from "./lib";
+
+interface Options {
+  /** Install only the slim set (base deps + lexflow essentials). */
+  slim: boolean;
+  /** Run `lexflow login` + `lexflow doctor` at the end. */
+  lexflow: boolean;
+}
+
+function parseOptions(): Options {
+  return {
+    slim: process.env.SLIM === "1",
+    lexflow: process.env.LEXFLOW === "1",
+  };
+}
+
+/** Interactive lexflow login followed by `lexflow doctor`. */
+async function lexflowAuth(): Promise<void> {
+  let bin = Bun.which("lexflow");
+  if (!bin) {
+    const fallback = `${HOME}/.local/bin/lexflow`;
+    if (await fileExists(fallback)) bin = fallback;
+  }
+  if (!bin) {
+    log.warn("lexflow não encontrado no PATH; pulando login. Rode 'lexflow login' manualmente.");
+    return;
+  }
+
+  // Under `curl | bash` the process stdin is the pipe, not the terminal, so an
+  // interactive login prompt can't read input. Attach the controlling terminal
+  // directly. Windows runs in a fresh console already, so "inherit" is fine.
+  let stdin: number | "inherit" = "inherit";
+  if (process.platform !== "win32") {
+    try {
+      stdin = openSync("/dev/tty", "r");
+    } catch {
+      // No controlling terminal (e.g. CI) — fall back to inherited stdin.
+    }
+  }
+
+  log.step("lexflow login...");
+  const login = Bun.spawn([bin, "login"], { stdin, stdout: "inherit", stderr: "inherit" });
+  const loginCode = await login.exited;
+  if (typeof stdin === "number") closeSync(stdin);
+  if (loginCode !== 0) {
+    log.warn("lexflow login falhou ou foi cancelado; pulando doctor.");
+    return;
+  }
+
+  log.step("lexflow doctor...");
+  const doctor = Bun.spawn([bin, "doctor"], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  await doctor.exited;
+}
 
 function getInstaller(
   tool: Tool,
@@ -26,9 +85,13 @@ async function isInstalled(tool: Tool): Promise<boolean> {
 
 async function main() {
   const platform = getPlatform();
+  const opts = parseOptions();
 
   const wsl = isWSL();
   const profilePath = getProfilePath();
+
+  // In slim mode only base deps + lexflow essentials are installed.
+  const toInstall = opts.slim ? installs.filter((t) => t.slim) : installs;
 
   const G = "\x1b[32m";
   const C = "\x1b[36m";
@@ -36,7 +99,7 @@ async function main() {
   const N = "\x1b[0m";
 
   console.log("");
-  console.log(`  ${B}Builder's Setup${N}`);
+  console.log(`  ${B}Builder's Setup${N}${opts.slim ? `  ${C}(slim)${N}` : ""}`);
   console.log(`  ${C}Plataforma:${N} ${platform}${wsl ? " (WSL)" : ""}`);
   console.log(`  ${C}Arquitetura:${N} ${process.arch}`);
   if (platform !== "windows") {
@@ -98,7 +161,7 @@ async function main() {
     }
   }
 
-  await runTools(installs, "Instalando");
+  await runTools(toInstall, "Instalando");
   await runTools(setups, "Configurando");
 
   // Stop sudo keep-alive
@@ -109,7 +172,7 @@ async function main() {
   const DIM = "\x1b[2m";
   const verifyFailed: string[] = [];
 
-  const verifiable = installs.filter((t) => t.verify && getInstaller(t, platform));
+  const verifiable = toInstall.filter((t) => t.verify && getInstaller(t, platform));
 
   if (verifiable.length > 0) {
     console.log(`\n  ${B}Verificação${N}`);
@@ -154,6 +217,11 @@ async function main() {
 
   if (executed === 0) {
     log.info("Tudo já está instalado e configurado.");
+  }
+
+  // lexflow login + doctor, only when explicitly requested.
+  if (opts.lexflow) {
+    await lexflowAuth();
   }
 
   console.log(`${G}========================================${N}`);
