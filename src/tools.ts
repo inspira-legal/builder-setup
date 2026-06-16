@@ -89,6 +89,7 @@ Signed-By: /etc/apt/keyrings/docker.asc`;
 export const installs: Tool[] = [
   {
     name: "System packages",
+    slim: true,
     shouldSkip: async () => {
       if (process.platform === "darwin") return has("brew");
       return false;
@@ -105,6 +106,7 @@ export const installs: Tool[] = [
 
   {
     name: "Linux dependencies",
+    slim: true,
     shouldSkip: async () => {
       const pkgs = LINUX_DEPS;
       const result = await $`dpkg -s ${pkgs}`.quiet().nothrow();
@@ -117,6 +119,7 @@ export const installs: Tool[] = [
 
   {
     name: "Git",
+    slim: true,
     shouldSkip: async () => has("git"),
     verify: async () => Bun.which("git"),
     linux: async () => {
@@ -151,6 +154,7 @@ export const installs: Tool[] = [
 
   {
     name: "GitHub CLI",
+    slim: true,
     shouldSkip: async () => has("gh"),
     verify: async () => Bun.which("gh"),
     linux: async () => {
@@ -185,6 +189,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "fnm",
+    slim: true,
     verify: async () => Bun.which("fnm"),
     shouldSkip: async () => has("fnm") || (await fileExists(FNM)),
     linux: async () => {
@@ -200,6 +205,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Node.js",
+    slim: true,
     verify: async () => Bun.which("node"),
     shouldSkip: async () => {
       if (!has("fnm") && !(await fileExists(FNM))) return true;
@@ -222,6 +228,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "Bun",
+    slim: true,
     shouldSkip: async () => has("bun"),
     verify: async () => Bun.which("bun"),
     linux: async () => {
@@ -252,6 +259,7 @@ Signed-By: /etc/apt/keyrings/githubcli-archive-keyring.gpg`;
 
   {
     name: "uv",
+    slim: true,
     shouldSkip: async () => has("uv"),
     verify: async () => Bun.which("uv"),
     linux: async () => {
@@ -368,6 +376,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
 
   {
     name: "lexflow",
+    slim: true,
     verify: async () => Bun.which("lexflow"),
     shouldSkip: async () => has("lexflow") || (await fileExists(`${HOME}/.local/bin/lexflow`)),
     linux: async () => {

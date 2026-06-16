@@ -10,6 +10,8 @@ export type InstallerResult = void | { profile: string[] };
 
 export interface Tool {
   name: string;
+  /** Part of the slim install set (base deps + lexflow essentials). */
+  slim?: boolean;
   /** Return true to skip install (already installed/configured). */
   shouldSkip?: () => Promise<boolean>;
   /** Verify installation after install. Return version string on success, null on failure. */
