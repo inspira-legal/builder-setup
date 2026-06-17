@@ -22,15 +22,16 @@ Write-Host "  Solicitando acesso de administrador..." -ForegroundColor Cyan
 Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `$env:SLIM='1'; & '$tmp'; pause"
 Remove-Item $tmp -ErrorAction SilentlyContinue
 
-# lexflow was installed into this user's profile during the elevated step, but
-# our PATH predates that. Refresh from the registry so `lexflow` resolves.
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-            [System.Environment]::GetEnvironmentVariable("Path", "User")
+# lexflow was installed during the elevated step (via `uv tool install`), but
+# that ran in a separate, elevated process whose PATH never reaches us. uv drops
+# the CLI in %USERPROFILE%\.local\bin — the exact dir the lexflow installer puts
+# on PATH — so add it here explicitly, then fall back to the full path.
+$lexflowBin = "$env:USERPROFILE\.local\bin"
+$env:Path = "$lexflowBin;$env:Path"
 
 $lexflow = (Get-Command lexflow -ErrorAction SilentlyContinue).Source
-if (-not $lexflow) {
-  $candidate = "$env:USERPROFILE\.local\bin\lexflow.exe"
-  if (Test-Path $candidate) { $lexflow = $candidate }
+if (-not $lexflow -and (Test-Path "$lexflowBin\lexflow.exe")) {
+  $lexflow = "$lexflowBin\lexflow.exe"
 }
 
 if ($lexflow) {
