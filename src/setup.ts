@@ -211,17 +211,20 @@ async function main() {
     }
   }
 
-  if (failed.length > 0 || verifyFailed.length > 0) {
-    process.exit(1);
-  }
-
   if (executed === 0) {
     log.info("Tudo já está instalado e configurado.");
   }
 
-  // lexflow login + doctor, only when explicitly requested.
+  // lexflow login + doctor, only when explicitly requested. Run this before
+  // bailing on failures: a verify miss elsewhere (e.g. fnm-managed Node not on
+  // the static PATH on Windows) shouldn't block login when lexflow installed
+  // fine. lexflowAuth() guards on finding the binary itself.
   if (opts.lexflow) {
     await lexflowAuth();
+  }
+
+  if (failed.length > 0 || verifyFailed.length > 0) {
+    process.exit(1);
   }
 
   console.log(`${G}========================================${N}`);
