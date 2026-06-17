@@ -219,7 +219,12 @@ async function main() {
   // bailing on failures: a verify miss elsewhere (e.g. fnm-managed Node not on
   // the static PATH on Windows) shouldn't block login when lexflow installed
   // fine. lexflowAuth() guards on finding the binary itself.
-  if (opts.lexflow) {
+  //
+  // On Windows this process is elevated (winget needs admin), and an elevated
+  // process can't hand a URL to the user's medium-integrity browser — the login
+  // gets blocked. There the bootstrap (install-slim.ps1) runs login + doctor in
+  // the original, non-elevated shell instead.
+  if (opts.lexflow && process.platform !== "win32") {
     await lexflowAuth();
   }
 
