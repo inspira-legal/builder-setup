@@ -29,13 +29,53 @@ function parseOptions(): Options {
   };
 }
 
-/** Interactive lexflow login followed by `lexflow doctor`. */
-async function lexflowAuth(): Promise<void> {
-  let bin = Bun.which("lexflow");
-  if (!bin) {
-    const fallback = `${HOME}/.local/bin/lexflow`;
-    if (await fileExists(fallback)) bin = fallback;
+const WAVE_CLI =
+  "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli";
+
+/** On PATH, or in ~/.local/bin (where the lexflow and uv installers drop binaries). */
+async function findBin(name: string): Promise<string | null> {
+  const bin = Bun.which(name);
+  if (bin) return bin;
+  const fallback = `${HOME}/.local/bin/${name}`;
+  return (await fileExists(fallback)) ? fallback : null;
+}
+
+async function run(cmd: string[]): Promise<number> {
+  return Bun.spawn(cmd, { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
+}
+
+/** wave-cli + its Claude skill. Needs `lexflow login` first: the repo lives on the lexflow git host. */
+async function installWave(): Promise<void> {
+  const uv = await findBin("uv");
+  if (!uv) {
+    log.warn(`uv não encontrado; pulando wave-cli. Rode 'uv tool install "${WAVE_CLI}"'.`);
+    return;
   }
+
+  log.step("Instalando wave-cli...");
+  if ((await run([uv, "tool", "install", WAVE_CLI])) !== 0) {
+    log.warn("Falha ao instalar wave-cli.");
+    return;
+  }
+
+  const wave = await findBin("wave");
+  if (!wave) {
+    log.warn(
+      "wave não encontrado após instalar; rode 'wave skill install' e 'wave doctor' manualmente.",
+    );
+    return;
+  }
+
+  log.step("wave skill install...");
+  if ((await run([wave, "skill", "install"])) !== 0) log.warn("Falha ao instalar a skill do Wave.");
+
+  log.step("wave doctor...");
+  await run([wave, "doctor"]);
+}
+
+/** Interactive lexflow login + `lexflow doctor`, then wave-cli (install, skill, `wave doctor`). */
+async function lexflowAuth(): Promise<void> {
+  const bin = await findBin("lexflow");
   if (!bin) {
     log.warn("lexflow não encontrado no PATH; pulando login. Rode 'lexflow login' manualmente.");
     return;
@@ -58,17 +98,14 @@ async function lexflowAuth(): Promise<void> {
   const loginCode = await login.exited;
   if (typeof stdin === "number") closeSync(stdin);
   if (loginCode !== 0) {
-    log.warn("lexflow login falhou ou foi cancelado; pulando doctor.");
+    log.warn("lexflow login falhou ou foi cancelado; pulando doctor e wave-cli.");
     return;
   }
 
   log.step("lexflow doctor...");
-  const doctor = Bun.spawn([bin, "doctor"], {
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  await doctor.exited;
+  await run([bin, "doctor"]);
+
+  await installWave();
 }
 
 function getInstaller(
@@ -215,7 +252,7 @@ async function main() {
     log.info("Tudo já está instalado e configurado.");
   }
 
-  // lexflow login + doctor, only when explicitly requested. Run this before
+  // lexflow login + doctor + wave-cli, only when explicitly requested. Run this before
   // bailing on failures: a verify miss elsewhere (e.g. fnm-managed Node not on
   // the static PATH on Windows) shouldn't block login when lexflow installed
   // fine. lexflowAuth() guards on finding the binary itself.

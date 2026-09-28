@@ -16,8 +16,8 @@ Unblock-File $tmp
 
 # Install elevated (winget needs admin). Env vars don't cross the UAC boundary,
 # so set them inside the elevated process. lexflow login is intentionally left
-# out here: an elevated process can't open the user's browser, so login runs
-# below in this original, non-elevated shell.
+# out here: an elevated process can't open the user's browser, so login (and
+# wave-cli, which needs it) runs below in this original, non-elevated shell.
 Write-Host "  Solicitando acesso de administrador..." -ForegroundColor Cyan
 Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `$env:SLIM='1'; & '$tmp'; pause"
 Remove-Item $tmp -ErrorAction SilentlyContinue
@@ -41,8 +41,27 @@ if ($lexflow) {
   if ($LASTEXITCODE -eq 0) {
     Write-Host "  lexflow doctor..." -ForegroundColor Cyan
     & $lexflow doctor
+
+    # wave-cli lives on the lexflow git host, so it needs the login above.
+    # uv came from winget in the elevated step; reload PATH from the registry
+    # so this shell sees it, keeping ~\.local\bin (uv tool bin) in front.
+    $env:Path = "$lexflowBin;" + [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+      Write-Host "  Instalando wave-cli..." -ForegroundColor Cyan
+      uv tool install "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
+      if (Get-Command wave -ErrorAction SilentlyContinue) {
+        Write-Host "  wave skill install..." -ForegroundColor Cyan
+        wave skill install
+        Write-Host "  wave doctor..." -ForegroundColor Cyan
+        wave doctor
+      } else {
+        Write-Host "  wave nao encontrado; rode 'wave skill install' e 'wave doctor' manualmente." -ForegroundColor Yellow
+      }
+    } else {
+      Write-Host "  uv nao encontrado; pulando wave-cli." -ForegroundColor Yellow
+    }
   } else {
-    Write-Host "  lexflow login falhou ou foi cancelado; pulando doctor." -ForegroundColor Yellow
+    Write-Host "  lexflow login falhou ou foi cancelado; pulando doctor e wave-cli." -ForegroundColor Yellow
   }
 } else {
   Write-Host "  lexflow nao encontrado no PATH; rode 'lexflow login' manualmente." -ForegroundColor Yellow
