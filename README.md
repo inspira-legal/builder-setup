@@ -23,7 +23,8 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.p
 ## Slim (AI + lexflow)
 
 Versão enxuta para começar a desenvolver com AI + lexflow: instala só o essencial
-(ver coluna **Slim** abaixo) e termina rodando `lexflow login` + `lexflow doctor`.
+(ver coluna **Slim** abaixo) e termina rodando `lexflow login` + `lexflow doctor`,
+depois instala o `wave` CLI com a skill do Claude (`wave skill install`) e roda `wave doctor`.
 Bem mais rápido — pula Docker, VS Code, Google Cloud SDK e afins.
 
 ### Linux / macOS / WSL
@@ -71,7 +72,8 @@ O binário é configurado por variáveis de ambiente — os scripts `install-sli
 nada mais são do que `install.*` com elas definidas. Para compor manualmente:
 
 - `SLIM=1` — instala só o conjunto enxuto (coluna **Slim**).
-- `LEXFLOW=1` — ao final, roda `lexflow login` seguido de `lexflow doctor`.
+- `LEXFLOW=1` — ao final, roda `lexflow login` seguido de `lexflow doctor`, instala o
+  `wave` CLI (`uv tool install`, precisa do login), a skill do Claude, e roda `wave doctor`.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | SLIM=1 bash
