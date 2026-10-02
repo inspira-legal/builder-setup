@@ -49,7 +49,9 @@ if ($lexflow) {
     if (Get-Command uv -ErrorAction SilentlyContinue) {
       Write-Host "  Instalando wave-cli..." -ForegroundColor Cyan
       uv tool install "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
-      if (Get-Command wave -ErrorAction SilentlyContinue) {
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Falha ao instalar wave-cli." -ForegroundColor Yellow
+      } elseif (Get-Command wave -ErrorAction SilentlyContinue) {
         Write-Host "  wave skill install..." -ForegroundColor Cyan
         wave skill install
         Write-Host "  wave doctor..." -ForegroundColor Cyan
