@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Thin wrapper: detects platform, downloads the right binary, runs it.
+# Ends with `lexflow login` + doctor and wave-cli; LEXFLOW=0 skips that.
 set -euo pipefail
 
 REPO="inspira-legal/builder-setup"
@@ -29,6 +30,6 @@ chmod +x "$DEST"
 [ "$OS" = "darwin" ] && xattr -d com.apple.quarantine "$DEST" 2>/dev/null || true
 
 echo "Running setup..."
-"$DEST"
+LEXFLOW="${LEXFLOW:-1}" "$DEST"
 
 rm -f "$DEST"

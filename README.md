@@ -4,7 +4,8 @@ Setup automático do ambiente de desenvolvimento. Binário único por plataforma
 
 ## Início rápido
 
-Setup completo do ambiente de builder.
+Setup completo do ambiente de builder. Termina rodando `lexflow login` + `lexflow doctor`,
+depois instala o `wave` CLI com a skill do Claude (`wave skill install`) e roda `wave doctor`.
 
 ### Linux / macOS / WSL
 
@@ -68,12 +69,13 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install-s
 
 ## Avançado
 
-O binário é configurado por variáveis de ambiente — os scripts `install-slim.*`
+O binário é configurado por variáveis de ambiente: os scripts `install-slim.*`
 nada mais são do que `install.*` com elas definidas. Para compor manualmente:
 
 - `SLIM=1` — instala só o conjunto enxuto (coluna **Slim**).
-- `LEXFLOW=1` — ao final, roda `lexflow login` seguido de `lexflow doctor`, instala o
-  `wave` CLI (`uv tool install`, precisa do login), a skill do Claude, e roda `wave doctor`.
+- `LEXFLOW=1` (padrão nos scripts `install*`) — ao final, roda `lexflow login` seguido de
+  `lexflow doctor`, instala o `wave` CLI (`uv tool install --upgrade`, precisa do login),
+  a skill do Claude, e roda `wave doctor`. `LEXFLOW=0` pula essa etapa.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | SLIM=1 bash
