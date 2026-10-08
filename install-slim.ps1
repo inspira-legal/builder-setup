@@ -48,7 +48,7 @@ if ($lexflow) {
     $env:Path = "$lexflowBin;" + [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
     if (Get-Command uv -ErrorAction SilentlyContinue) {
       Write-Host "  Instalando wave-cli..." -ForegroundColor Cyan
-      uv tool install "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
+      uv tool install --upgrade "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
       if ($LASTEXITCODE -ne 0) {
         Write-Host "  Falha ao instalar wave-cli." -ForegroundColor Yellow
       } elseif (Get-Command wave -ErrorAction SilentlyContinue) {
