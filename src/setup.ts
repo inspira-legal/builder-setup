@@ -53,7 +53,7 @@ async function installWave(): Promise<void> {
   }
 
   log.step("Instalando wave-cli...");
-  if ((await run([uv, "tool", "install", WAVE_CLI])) !== 0) {
+  if ((await run([uv, "tool", "install", "--upgrade", WAVE_CLI])) !== 0) {
     log.warn("Falha ao instalar wave-cli.");
     return;
   }
