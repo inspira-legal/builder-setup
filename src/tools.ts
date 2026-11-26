@@ -418,6 +418,13 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       // O pacote padrão é zip portátil, que não entra no PATH desta sessão;
       // o instalador nullsoft é por máquina e grava no PATH do sistema.
       await winget("Coder.Coder", "--installer-type nullsoft");
+      // O instalador silencioso não registra C:\\Program Files\\Coder\\bin no PATH.
+      const add = `$p = Join-Path $env:ProgramFiles 'Coder\\bin'; $m = [Environment]::GetEnvironmentVariable('Path','Machine'); if (($m -split ';') -notcontains $p) { [Environment]::SetEnvironmentVariable('Path', ($m.TrimEnd(';') + ';' + $p), 'Machine') }`;
+      const proc = Bun.spawn(["powershell.exe", "-NoProfile", "-Command", add], {
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      if ((await proc.exited) !== 0) throw new Error("Falha ao pôr o Coder CLI no PATH.");
     },
   },
 
