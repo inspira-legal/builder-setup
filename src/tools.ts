@@ -381,9 +381,19 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
     name: "Claude Desktop",
     slim: true,
     shouldSkip: async () => {
-      // .app e a pasta do Windows são diretórios; Bun.file().exists() só vê arquivos.
+      // Claude.app é diretório; Bun.file().exists() só vê arquivos.
       if (process.platform === "darwin") return existsSync("/Applications/Claude.app");
-      return existsSync(`${process.env.LOCALAPPDATA ?? ""}\\AnthropicClaude`);
+      // No Windows o winget instala MSIX (fora de uma pasta fixa) e falha se já existe:
+      // pergunta ao próprio winget.
+      const proc = Bun.spawn(
+        [
+          "powershell.exe",
+          "-Command",
+          "winget list -e --id Anthropic.Claude --accept-source-agreements",
+        ],
+        { stdout: "ignore", stderr: "ignore" },
+      );
+      return (await proc.exited) === 0;
     },
     darwin: async () => {
       await $`brew install --cask claude`;
