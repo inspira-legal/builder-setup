@@ -86,10 +86,11 @@ nada mais são do que `install.*` com elas definidas. Para compor manualmente:
 
 - `SLIM=1` — instala só o conjunto enxuto (coluna **Slim**).
 - `LEXFLOW=1` (padrão nos scripts `install*`) — ao final, atualiza o `lexflow`
-  (`lexflow self-update`; no Windows, `uv tool install --force`), roda `lexflow login` e
-  `lexflow doctor`, configura o credential helper do lexflow no git global (o repositório
-  do wave exige credencial), instala o `wave` CLI (`uv tool install --upgrade`), a skill
-  do Claude, e roda `wave doctor`. `LEXFLOW=0` pula essa etapa.
+  (`uv tool install --force`, o mesmo que o `lexflow self-update` faz), roda `lexflow login`
+  e `lexflow doctor`, configura o credential helper do lexflow no git global só para o host
+  do lexflow (o repositório do wave exige credencial), instala o `wave` CLI
+  (`uv tool install --upgrade`), a skill do Claude, e roda `wave doctor`. `LEXFLOW=0` pula
+  essa etapa.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | SLIM=1 bash
