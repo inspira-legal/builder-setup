@@ -50,14 +50,31 @@ if ($env:LEXFLOW -ne '0') {
   # through uv, not `lexflow self-update`: on Windows a running lexflow.exe can't
   # replace itself ("Acesso negado") and is left half-uninstalled. The CLI repo
   # is readable without credentials, so this works before login.
+  # An old CLI may lack `lexflow refs`, whose failure would read as "no access",
+  # so the git and wave-cli steps below only run on an up-to-date CLI.
+  $upToDate = $false
   if ($lexflow -and $hasUv) {
     Write-Host ""
     Write-Host "  Atualizando lexflow..." -ForegroundColor Cyan
     uv tool install --force --quiet "git+https://lexflow.internal.inspira.legal/git/inspira/cli.git"
-    if ($LASTEXITCODE -ne 0) {
-      $pending += "lexflow: nao foi possivel atualizar. Rode o setup de novo."
-    }
+    $upToDate = $LASTEXITCODE -eq 0
   }
+  if ($lexflow -and -not $upToDate) {
+    $pending += "lexflow: nao foi possivel atualizar, entao o wave-cli ficou de fora. Rode o setup de novo."
+  }
+
+  $waveGit = 'https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git'
+  # True when git can authenticate against the wave repo (prompts off). Through
+  # cmd so the redirect doesn't turn git's stderr into a PowerShell error.
+  function Test-WaveGit {
+    $env:GIT_TERMINAL_PROMPT = '0'
+    cmd /c "git ls-remote --quiet $waveGit >nul 2>&1"
+    $ok = $LASTEXITCODE -eq 0
+    Remove-Item Env:GIT_TERMINAL_PROMPT -ErrorAction SilentlyContinue
+    return $ok
+  }
+  # Single-quote for sh (Git for Windows runs `!` helpers through sh).
+  function ConvertTo-ShQuoted([string]$word) { "'" + $word.Replace("'", "'\''") + "'" }
 
   if ($lexflow) {
     Write-Host ""
@@ -74,32 +91,31 @@ if ($env:LEXFLOW -ne '0') {
       # what `wave doctor` asks for, with the Windows fixes:
       #   - `lexflow refs <app>` writes the helper file via the CLI itself and
       #     doubles as an access check on the wave repo;
-      #   - forward slashes (git can't find the file with backslashes);
+      #   - a functional check (git ls-remote), not just the config's shape: a
+      #     config left by older instructions may look right and point nowhere;
+      #   - forward slashes (git can't find the file with backslashes) and
+      #     sh-quoted paths (spaces or apostrophes in the user name);
       #   - the lexflow tool's own python (python3 is often the Store stub);
       #   - the empty reset entry passed through --% (Windows PowerShell 5.1
       #     drops empty arguments to native commands).
       $gitOk = $false
       $helperFile = "$env:USERPROFILE\.config\lexflow\git-credentials-helper.py"
       $helperKey = 'credential.https://lexflow.internal.inspira.legal.helper'
-      Write-Host "  Configurando o git para o host do lexflow..." -ForegroundColor Cyan
-      & $lexflow refs inspira/wave-cli | Out-Null
-      if ($LASTEXITCODE -ne 0 -or -not (Test-Path $helperFile)) {
-        $pending += "wave-cli: sem acesso ao repositorio inspira/wave-cli no lexflow. Confira o login ('lexflow login') e rode o setup de novo."
-      } else {
-        $values = @(git config --global --get-all $helperKey)
-        $gitOk = $values.Count -ge 2 -and $values[0] -eq '' -and [bool]($values | Select-Object -Skip 1 | Where-Object { $_ })
-        if (-not $gitOk) {
-          $py = $null
-          if ($hasUv) {
-            $candidate = Join-Path ((uv tool dir) | Out-String).Trim() 'lexflow-deploy-cli\Scripts\python.exe'
-            if (Test-Path $candidate) { $py = $candidate }
-          }
-          if (-not $py) { $py = 'python' }
-          $directive = "!'" + $py.Replace('\', '/') + "' '" + $helperFile.Replace('\', '/') + "'"
+      if ($upToDate) {
+        Write-Host "  Configurando o git para o host do lexflow..." -ForegroundColor Cyan
+        & $lexflow refs inspira/wave-cli | Out-Null
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $helperFile)) {
+          $pending += "wave-cli: sem acesso ao repositorio inspira/wave-cli no lexflow. Confira o login ('lexflow login') e rode o setup de novo."
+        } elseif (Test-WaveGit) {
+          $gitOk = $true
+        } else {
+          $py = Join-Path ((uv tool dir) | Out-String).Trim() 'lexflow-deploy-cli\Scripts\python.exe'
+          if (-not (Test-Path $py)) { $py = 'python' }
+          $directive = '!' + (ConvertTo-ShQuoted $py.Replace('\', '/')) + ' ' + (ConvertTo-ShQuoted $helperFile.Replace('\', '/'))
           git --% config --global --replace-all credential.https://lexflow.internal.inspira.legal.helper ""
           $resetOk = $LASTEXITCODE -eq 0
           git config --global --add $helperKey $directive
-          $gitOk = $resetOk -and $LASTEXITCODE -eq 0
+          $gitOk = $resetOk -and $LASTEXITCODE -eq 0 -and (Test-WaveGit)
           if (-not $gitOk) {
             $pending += "git: nao foi possivel configurar a credencial do lexflow. Rode 'wave doctor' e siga a linha que ele sugerir."
           }
