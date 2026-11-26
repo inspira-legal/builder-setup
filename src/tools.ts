@@ -38,12 +38,12 @@ const LINUX_DEPS = [
 
 // ── Helpers ──
 
-async function winget(id: string) {
+async function winget(id: string, extra = "") {
   const proc = Bun.spawn(
     [
       "powershell.exe",
       "-Command",
-      `winget install -e --id ${id} --accept-source-agreements --accept-package-agreements --silent`,
+      `winget install -e --id ${id} ${extra} --accept-source-agreements --accept-package-agreements --silent`,
     ],
     { stdout: "inherit", stderr: "inherit" },
   );
@@ -415,7 +415,9 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       await $`brew install coder`;
     },
     windows: async () => {
-      await winget("Coder.Coder");
+      // O pacote padrão é zip portátil, que não entra no PATH desta sessão;
+      // o instalador nullsoft é por máquina e grava no PATH do sistema.
+      await winget("Coder.Coder", "--installer-type nullsoft");
     },
   },
 
