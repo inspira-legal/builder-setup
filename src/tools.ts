@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { existsSync } from "node:fs";
 import {
   type Tool,
   log,
@@ -371,6 +372,40 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
     },
     windows: async () => {
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
+    },
+  },
+
+  {
+    // Safira: Claude Desktop (aba Code) conecta por SSH no workspace via Coder CLI.
+    // O login e o `coder config-ssh` de cada ambiente vêm do portal Safira.
+    name: "Claude Desktop",
+    slim: true,
+    shouldSkip: async () => {
+      // .app e a pasta do Windows são diretórios; Bun.file().exists() só vê arquivos.
+      if (process.platform === "darwin") return existsSync("/Applications/Claude.app");
+      return existsSync(`${process.env.LOCALAPPDATA ?? ""}\\AnthropicClaude`);
+    },
+    darwin: async () => {
+      await $`brew install --cask claude`;
+    },
+    windows: async () => {
+      await winget("Anthropic.Claude");
+    },
+  },
+
+  {
+    name: "Coder CLI",
+    slim: true,
+    verify: async () => Bun.which("coder"),
+    shouldSkip: async () => has("coder"),
+    linux: async () => {
+      await $`curl -fsSL https://coder.com/install.sh | sh`;
+    },
+    darwin: async () => {
+      await $`brew install coder`;
+    },
+    windows: async () => {
+      await winget("Coder.Coder");
     },
   },
 
