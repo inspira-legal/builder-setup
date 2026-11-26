@@ -29,7 +29,8 @@ for (const name of ["Claude Desktop", "Coder CLI"]) {
   }
 }
 if (platform !== "linux") {
-  const p = Bun.spawn(["coder", "version"], { stdout: "inherit", stderr: "inherit" });
+  const coder = await installs.find((x) => x.name === "Coder CLI")!.verify!();
+  const p = Bun.spawn([coder!, "version"], { stdout: "inherit", stderr: "inherit" });
   if ((await p.exited) !== 0) failed = true;
 }
 process.exit(failed ? 1 : 0);

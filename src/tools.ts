@@ -36,6 +36,8 @@ const LINUX_DEPS = [
   "liblzma-dev",
 ];
 
+const CODER_WIN = `${process.env.ProgramFiles ?? "C:\\Program Files"}\\Coder\\bin\\coder.exe`;
+
 // ── Helpers ──
 
 async function winget(id: string, extra = "") {
@@ -406,8 +408,9 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
   {
     name: "Coder CLI",
     slim: true,
-    verify: async () => Bun.which("coder"),
-    shouldSkip: async () => has("coder"),
+    // No Windows o Bun.which não vê o PATH atualizado neste processo: olha o caminho do instalador.
+    verify: async () => Bun.which("coder") ?? (existsSync(CODER_WIN) ? CODER_WIN : null),
+    shouldSkip: async () => has("coder") || (process.platform === "win32" && existsSync(CODER_WIN)),
     linux: async () => {
       await $`curl -fsSL https://coder.com/install.sh | sh`;
     },
@@ -418,7 +421,7 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
       // O pacote padrão é zip portátil, que não entra no PATH desta sessão;
       // o instalador nullsoft é por máquina e grava no PATH do sistema.
       await winget("Coder.Coder", "--installer-type nullsoft");
-      // O instalador silencioso não registra C:\\Program Files\\Coder\\bin no PATH.
+      // O instalador silencioso não registra Program Files\\Coder\\bin no PATH.
       const add = `$p = Join-Path $env:ProgramFiles 'Coder\\bin'; $m = [Environment]::GetEnvironmentVariable('Path','Machine'); if (($m -split ';') -notcontains $p) { [Environment]::SetEnvironmentVariable('Path', ($m.TrimEnd(';') + ';' + $p), 'Machine') }`;
       const proc = Bun.spawn(["powershell.exe", "-NoProfile", "-Command", add], {
         stdout: "inherit",
