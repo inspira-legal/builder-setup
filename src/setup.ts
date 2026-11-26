@@ -285,6 +285,10 @@ async function main() {
     console.log(`${G}  Abra um novo terminal para aplicar.   ${N}`);
     console.log(`${G}========================================${N}`);
   }
+  if (!wsl)
+    log.info(
+      "Safira: abra o portal Safira e use 'Conectar Claude Desktop' para ligar seu ambiente.",
+    );
 }
 
 main().catch((err) => {

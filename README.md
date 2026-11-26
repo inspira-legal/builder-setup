@@ -59,6 +59,8 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install-s
 | Google Cloud SDK | ⬚ | ✅ | ✅ | ✅ | ✅ |
 | VS Code | ⬚ | ✅ | ✅ | ✅ | ⬚ |
 | Claude Code | ⬚ | ✅ | ✅ | ✅ | ✅ |
+| Claude Desktop | ✅ | ✅ | ✅ | ⬚ | ⬚ |
+| Coder CLI (Safira) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | lexflow | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Git config | ✅ | ✅ | ✅ | ✅ | ✅ |
 | fnm profile | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -66,6 +68,9 @@ irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install-s
 | WSL config (editor, browser) | ✅ | ⬚ | ⬚ | ⬚ | ✅ |
 
 > ✅ suportado / incluído &nbsp; ⬚ não se aplica / fora do slim
+
+**Safira:** com Claude Desktop e Coder CLI instalados, abra o portal Safira, escolha o projeto
+e use **Conectar Claude Desktop**. O portal conduz o `coder login` e o `coder config-ssh` do ambiente.
 
 ## Avançado
 

@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { existsSync } from "node:fs";
 import {
   type Tool,
   log,
@@ -35,14 +36,16 @@ const LINUX_DEPS = [
   "liblzma-dev",
 ];
 
+const CODER_WIN = `${process.env.ProgramFiles ?? "C:\\Program Files"}\\Coder\\bin\\coder.exe`;
+
 // ── Helpers ──
 
-async function winget(id: string) {
+async function winget(id: string, extra = "") {
   const proc = Bun.spawn(
     [
       "powershell.exe",
       "-Command",
-      `winget install -e --id ${id} --accept-source-agreements --accept-package-agreements --silent`,
+      `winget install -e --id ${id} ${extra} --accept-source-agreements --accept-package-agreements --silent`,
     ],
     { stdout: "inherit", stderr: "inherit" },
   );
@@ -371,6 +374,60 @@ Signed-By: /etc/apt/keyrings/packages.microsoft.gpg`;
     },
     windows: async () => {
       await $`powershell -NoProfile -Command "irm https://claude.ai/install.ps1 | iex"`;
+    },
+  },
+
+  {
+    // Safira: Claude Desktop (aba Code) conecta por SSH no workspace via Coder CLI.
+    // O login e o `coder config-ssh` de cada ambiente vêm do portal Safira.
+    name: "Claude Desktop",
+    slim: true,
+    shouldSkip: async () => {
+      // Claude.app é diretório; Bun.file().exists() só vê arquivos.
+      if (process.platform === "darwin") return existsSync("/Applications/Claude.app");
+      // No Windows o winget instala MSIX (fora de uma pasta fixa) e falha se já existe:
+      // pergunta ao próprio winget.
+      const proc = Bun.spawn(
+        [
+          "powershell.exe",
+          "-Command",
+          "winget list -e --id Anthropic.Claude --accept-source-agreements",
+        ],
+        { stdout: "ignore", stderr: "ignore" },
+      );
+      return (await proc.exited) === 0;
+    },
+    darwin: async () => {
+      await $`brew install --cask claude`;
+    },
+    windows: async () => {
+      await winget("Anthropic.Claude");
+    },
+  },
+
+  {
+    name: "Coder CLI",
+    slim: true,
+    // No Windows o Bun.which não vê o PATH atualizado neste processo: olha o caminho do instalador.
+    verify: async () => Bun.which("coder") ?? (existsSync(CODER_WIN) ? CODER_WIN : null),
+    shouldSkip: async () => has("coder") || (process.platform === "win32" && existsSync(CODER_WIN)),
+    linux: async () => {
+      await $`curl -fsSL https://coder.com/install.sh | sh`;
+    },
+    darwin: async () => {
+      await $`brew install coder`;
+    },
+    windows: async () => {
+      // O pacote padrão é zip portátil, que não entra no PATH desta sessão;
+      // o instalador nullsoft é por máquina e grava no PATH do sistema.
+      await winget("Coder.Coder", "--installer-type nullsoft");
+      // O instalador silencioso não registra Program Files\\Coder\\bin no PATH.
+      const add = `$p = Join-Path $env:ProgramFiles 'Coder\\bin'; $m = [Environment]::GetEnvironmentVariable('Path','Machine'); if (($m -split ';') -notcontains $p) { [Environment]::SetEnvironmentVariable('Path', ($m.TrimEnd(';') + ';' + $p), 'Machine') }`;
+      const proc = Bun.spawn(["powershell.exe", "-NoProfile", "-Command", add], {
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      if ((await proc.exited) !== 0) throw new Error("Falha ao pôr o Coder CLI no PATH.");
     },
   },
 
