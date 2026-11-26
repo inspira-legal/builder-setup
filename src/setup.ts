@@ -29,8 +29,17 @@ function parseOptions(): Options {
   };
 }
 
-const WAVE_CLI =
-  "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli";
+const LEXFLOW_URL = "https://lexflow.internal.inspira.legal";
+const WAVE_APP = "inspira/wave-cli";
+const WAVE_CLI = `wave-cli @ git+${LEXFLOW_URL}/git/${WAVE_APP}.git#subdirectory=cli`;
+
+// Git credential helper scoped to the lexflow host, in the exact shape
+// `wave doctor` checks for (wave_cli.py git_helper_line/git_helper_ok).
+const GIT_HELPER_KEY = `credential.${LEXFLOW_URL}.helper`;
+const GIT_HELPER_FILE = `${HOME}/.config/lexflow/git-credentials-helper.py`;
+
+/** Steps that failed after login, shown next to the final banner instead of lost in the log. */
+const pending: string[] = [];
 
 /** On PATH, or in ~/.local/bin (where the lexflow and uv installers drop binaries). */
 async function findBin(name: string): Promise<string | null> {
@@ -44,17 +53,62 @@ async function run(cmd: string[]): Promise<number> {
   return Bun.spawn(cmd, { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
 }
 
+/**
+ * Teach the global git to authenticate against the lexflow host, so `uv tool
+ * install git+<lexflow host>` (wave-cli) works.
+ *
+ * `lexflow clone` only wires the helper into each clone's .git/config, and
+ * `lexflow login` only refreshes the helper file when it already exists, so
+ * on a machine that never cloned an app nothing answers git's credential
+ * request. `lexflow refs <app>` writes the helper file through the CLI's own
+ * code (no internal imports) and doubles as an access check on the wave repo.
+ */
+async function configureLexflowGit(lexflow: string): Promise<boolean> {
+  log.step("Configurando o git para o host do lexflow...");
+  const refs = Bun.spawn([lexflow, "refs", WAVE_APP], { stdout: "ignore", stderr: "inherit" });
+  if ((await refs.exited) !== 0 || !(await fileExists(GIT_HELPER_FILE))) {
+    pending.push(
+      `wave-cli: sem acesso ao repositório ${WAVE_APP} no lexflow. Confira o login ('lexflow login') e rode o setup de novo.`,
+    );
+    return false;
+  }
+
+  // Argv arrays, not the Bun shell: the reset needs a literal empty argument.
+  const gitConfig = (...args: string[]) =>
+    Bun.spawnSync(["git", "config", "--global", ...args], { stdout: "pipe", stderr: "ignore" });
+
+  const values = gitConfig("--get-all", GIT_HELPER_KEY).stdout.toString().split("\n").slice(0, -1);
+  // Empty entry first resets the host's helper list, so osxkeychain can't
+  // answer with a stale 1h token before ours. Same check as `wave doctor`.
+  if (values.length >= 2 && values[0] === "" && values.slice(1).some(Boolean)) return true;
+
+  // Absolute path on purpose: git doesn't expand `~` inside a helper value.
+  const ok =
+    gitConfig("--replace-all", GIT_HELPER_KEY, "").exitCode === 0 &&
+    gitConfig("--add", GIT_HELPER_KEY, `!python3 ${GIT_HELPER_FILE}`).exitCode === 0;
+  if (!ok) {
+    pending.push(
+      "git: não foi possível configurar a credencial do lexflow. Rode 'wave doctor' e siga a linha que ele sugerir.",
+    );
+  }
+  return ok;
+}
+
 /** wave-cli + its Claude skill. Needs `lexflow login` first: the repo lives on the lexflow git host. */
 async function installWave(): Promise<void> {
   const uv = await findBin("uv");
   if (!uv) {
     log.warn(`uv não encontrado; pulando wave-cli. Rode 'uv tool install "${WAVE_CLI}"'.`);
+    pending.push("wave-cli: uv não encontrado. Rode o setup de novo.");
     return;
   }
 
   log.step("Instalando wave-cli...");
   if ((await run([uv, "tool", "install", "--upgrade", WAVE_CLI])) !== 0) {
     log.warn("Falha ao instalar wave-cli.");
+    pending.push(
+      "wave-cli: falhou ao instalar. Rode o setup de novo; se repetir, rode 'wave doctor'.",
+    );
     return;
   }
 
@@ -99,13 +153,22 @@ async function lexflowAuth(): Promise<void> {
   if (typeof stdin === "number") closeSync(stdin);
   if (loginCode !== 0) {
     log.warn("lexflow login falhou ou foi cancelado; pulando doctor e wave-cli.");
+    pending.push("lexflow: login não concluído. Rode o setup de novo.");
     return;
+  }
+
+  // The lexflow tool is skipped when already installed, so an old CLI would
+  // stick forever (pre-1.2 sessions expire after 1h and break git). Upgrade it
+  // here, after login, since the CLI is fetched from the lexflow host.
+  log.step("lexflow self-update...");
+  if ((await run([bin, "self-update"])) !== 0) {
+    pending.push("lexflow: não foi possível atualizar. Rode 'lexflow self-update'.");
   }
 
   log.step("lexflow doctor...");
   await run([bin, "doctor"]);
 
-  await installWave();
+  if (await configureLexflowGit(bin)) await installWave();
 }
 
 function getInstaller(
@@ -263,6 +326,13 @@ async function main() {
   // the original, non-elevated shell instead.
   if (opts.lexflow && process.platform !== "win32") {
     await lexflowAuth();
+  }
+
+  if (pending.length > 0) {
+    console.log("");
+    console.log(`  ${B}Pendências${N}`);
+    for (const item of pending) log.warn(item);
+    console.log("");
   }
 
   if (failed.length > 0 || verifyFailed.length > 0) {
