@@ -104,7 +104,15 @@ async function installWave(): Promise<void> {
   }
 
   log.step("Instalando wave-cli...");
-  if ((await run([uv, "tool", "install", "--upgrade", WAVE_CLI])) !== 0) {
+  // One retry: the lexflow git host returns 500 now and then (wave-cli README),
+  // and right after a lexflow upgrade the first git call may still miss auth.
+  let code = await run([uv, "tool", "install", "--upgrade", WAVE_CLI]);
+  if (code !== 0) {
+    log.info("Tentando de novo em 10s...");
+    await Bun.sleep(10_000);
+    code = await run([uv, "tool", "install", "--upgrade", WAVE_CLI]);
+  }
+  if (code !== 0) {
     log.warn("Falha ao instalar wave-cli.");
     pending.push(
       "wave-cli: falhou ao instalar. Rode o setup de novo; se repetir, rode 'wave doctor'.",

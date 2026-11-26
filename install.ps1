@@ -110,7 +110,16 @@ if ($env:LEXFLOW -ne '0') {
         # Already reported above.
       } elseif ($hasUv) {
         Write-Host "  Instalando wave-cli..." -ForegroundColor Cyan
-        uv tool install --upgrade "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
+        $waveSpec = "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli"
+        uv tool install --upgrade $waveSpec
+        if ($LASTEXITCODE -ne 0) {
+          # One retry: the lexflow git host returns 500 now and then (wave-cli
+          # README), and right after a lexflow upgrade the first git call may
+          # still miss auth.
+          Write-Host "  Tentando de novo em 10s..." -ForegroundColor Cyan
+          Start-Sleep -Seconds 10
+          uv tool install --upgrade $waveSpec
+        }
         if ($LASTEXITCODE -ne 0) {
           Write-Host "  Falha ao instalar wave-cli." -ForegroundColor Yellow
           $pending += "wave-cli: falhou ao instalar. Rode o setup de novo; se repetir, rode 'wave doctor'."
