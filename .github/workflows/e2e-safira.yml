@@ -16,3 +16,11 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run scripts/e2e-safira.ts
+      - name: diag coder (windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path "C:\Program Files","C:\Program Files (x86)","$env:LOCALAPPDATA","$env:ProgramData" -Filter coder.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          "MACHINE: " + [Environment]::GetEnvironmentVariable('Path','Machine')
+          "USER: " + [Environment]::GetEnvironmentVariable('Path','User')
+          winget list -e --id Coder.Coder
