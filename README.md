@@ -40,6 +40,13 @@ curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/in
 irm https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install-slim.ps1 | iex
 ```
 
+## Atualizar ou consertar
+
+Rode o mesmo comando de novo. O setup é seguro para repetir: atualiza o `lexflow`
+(quem instalou antes de outubro/2026 está numa versão cuja sessão vence em 1h),
+configura o git para o host do lexflow e reinstala o `wave`. O que não der certo
+aparece em **Pendências** no final, com o que fazer.
+
 ## O que faz
 
 | | Slim | Windows | macOS | Linux | WSL |
@@ -78,9 +85,12 @@ O binário é configurado por variáveis de ambiente: os scripts `install-slim.*
 nada mais são do que `install.*` com elas definidas. Para compor manualmente:
 
 - `SLIM=1` — instala só o conjunto enxuto (coluna **Slim**).
-- `LEXFLOW=1` (padrão nos scripts `install*`) — ao final, roda `lexflow login` seguido de
-  `lexflow doctor`, instala o `wave` CLI (`uv tool install --upgrade`, precisa do login),
-  a skill do Claude, e roda `wave doctor`. `LEXFLOW=0` pula essa etapa.
+- `LEXFLOW=1` (padrão nos scripts `install*`) — ao final, atualiza o `lexflow`
+  (`uv tool install --force`, o mesmo que o `lexflow self-update` faz), roda `lexflow login`
+  e `lexflow doctor`, configura o credential helper do lexflow no git global só para o host
+  do lexflow (o repositório do wave exige credencial), instala o `wave` CLI
+  (`uv tool install --upgrade`), a skill do Claude, e roda `wave doctor`. `LEXFLOW=0` pula
+  essa etapa.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inspira-legal/builder-setup/main/install.sh | SLIM=1 bash

@@ -2,6 +2,15 @@ import { $ } from "bun";
 import { openSync, closeSync } from "node:fs";
 import { installs, setups } from "./tools";
 import {
+  LEXFLOW_URL,
+  WAVE_APP,
+  WAVE_GIT,
+  GIT_HELPER_FILE,
+  gitReachesWave,
+  lexflowPython,
+  writeGitHelper,
+} from "./lexflow-git";
+import {
   type Tool,
   type Platform,
   getPlatform,
@@ -29,8 +38,12 @@ function parseOptions(): Options {
   };
 }
 
-const WAVE_CLI =
-  "wave-cli @ git+https://lexflow.internal.inspira.legal/git/inspira/wave-cli.git#subdirectory=cli";
+const WAVE_CLI = `wave-cli @ git+${WAVE_GIT}#subdirectory=cli`;
+// The CLI repo is readable without credentials; this is what `lexflow self-update` runs.
+const LEXFLOW_CLI = `git+${LEXFLOW_URL}/git/inspira/cli.git`;
+
+/** Steps that failed after login, shown next to the final banner instead of lost in the log. */
+const pending: string[] = [];
 
 /** On PATH, or in ~/.local/bin (where the lexflow and uv installers drop binaries). */
 async function findBin(name: string): Promise<string | null> {
@@ -44,17 +57,57 @@ async function run(cmd: string[]): Promise<number> {
   return Bun.spawn(cmd, { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
 }
 
-/** wave-cli + its Claude skill. Needs `lexflow login` first: the repo lives on the lexflow git host. */
-async function installWave(): Promise<void> {
-  const uv = await findBin("uv");
-  if (!uv) {
-    log.warn(`uv não encontrado; pulando wave-cli. Rode 'uv tool install "${WAVE_CLI}"'.`);
-    return;
+/**
+ * Teach the global git to authenticate against the lexflow host, so `uv tool
+ * install git+<lexflow host>` (wave-cli) works.
+ *
+ * `lexflow clone` only wires the helper into each clone's .git/config, and
+ * `lexflow login` only refreshes the helper file when it already exists, so
+ * on a machine that never cloned an app nothing answers git's credential
+ * request. `lexflow refs <app>` writes the helper file through the CLI's own
+ * code (no internal imports) and doubles as an access check on the wave repo.
+ */
+async function configureLexflowGit(lexflow: string, uv: string): Promise<boolean> {
+  log.step("Configurando o git para o host do lexflow...");
+  const refs = Bun.spawn([lexflow, "refs", WAVE_APP], { stdout: "ignore", stderr: "inherit" });
+  if ((await refs.exited) !== 0 || !(await fileExists(GIT_HELPER_FILE))) {
+    pending.push(
+      `wave-cli: sem acesso ao repositório ${WAVE_APP} no lexflow. Confira o login ('lexflow login') e rode o setup de novo.`,
+    );
+    return false;
   }
 
+  // Check that git can actually authenticate, not just that some helper is
+  // set: a config left by older instructions may have the right shape and
+  // still point nowhere (e.g. backslash paths on Windows).
+  if (gitReachesWave()) return true;
+
+  // The lexflow tool's own python avoids depending on python3 being on PATH.
+  const ok = writeGitHelper(await lexflowPython(uv)) && gitReachesWave();
+  if (!ok) {
+    pending.push(
+      "git: não foi possível configurar a credencial do lexflow. Rode 'wave doctor' e siga a linha que ele sugerir.",
+    );
+  }
+  return ok;
+}
+
+/** wave-cli + its Claude skill. Needs `lexflow login` first: the repo lives on the lexflow git host. */
+async function installWave(uv: string): Promise<void> {
   log.step("Instalando wave-cli...");
-  if ((await run([uv, "tool", "install", "--upgrade", WAVE_CLI])) !== 0) {
+  // One retry: the lexflow git host returns 500 now and then (wave-cli README),
+  // and right after a lexflow upgrade the first git call may still miss auth.
+  let code = await run([uv, "tool", "install", "--upgrade", WAVE_CLI]);
+  if (code !== 0) {
+    log.info("Tentando de novo em 10s...");
+    await Bun.sleep(10_000);
+    code = await run([uv, "tool", "install", "--upgrade", WAVE_CLI]);
+  }
+  if (code !== 0) {
     log.warn("Falha ao instalar wave-cli.");
+    pending.push(
+      "wave-cli: falhou ao instalar. Rode o setup de novo; se repetir, rode 'wave doctor'.",
+    );
     return;
   }
 
@@ -73,12 +126,32 @@ async function installWave(): Promise<void> {
   await run([wave, "doctor"]);
 }
 
-/** Interactive lexflow login + `lexflow doctor`, then wave-cli (install, skill, `wave doctor`). */
+/**
+ * lexflow upgrade + interactive login + `lexflow doctor`, then the git
+ * credential for the lexflow host and wave-cli (install, skill, `wave doctor`).
+ */
 async function lexflowAuth(): Promise<void> {
   const bin = await findBin("lexflow");
   if (!bin) {
     log.warn("lexflow não encontrado no PATH; pulando login. Rode 'lexflow login' manualmente.");
+    pending.push("lexflow: não encontrado. Rode o setup de novo.");
     return;
+  }
+  const uv = await findBin("uv");
+
+  // The lexflow tool is skipped when already installed, so an old CLI would
+  // stick forever (pre-1.2 sessions expire after 1h and break git). Upgrade
+  // before login, so login runs on the current CLI. Same command as
+  // `lexflow self-update`, called through uv so it works on any CLI version.
+  let upToDate = false;
+  if (uv) {
+    log.step("Atualizando lexflow...");
+    upToDate = (await run([uv, "tool", "install", "--force", "--quiet", LEXFLOW_CLI])) === 0;
+  }
+  if (!upToDate) {
+    pending.push(
+      "lexflow: não foi possível atualizar, então o wave-cli ficou de fora. Rode o setup de novo.",
+    );
   }
 
   // Under `curl | bash` the process stdin is the pipe, not the terminal, so an
@@ -99,13 +172,15 @@ async function lexflowAuth(): Promise<void> {
   if (typeof stdin === "number") closeSync(stdin);
   if (loginCode !== 0) {
     log.warn("lexflow login falhou ou foi cancelado; pulando doctor e wave-cli.");
+    pending.push("lexflow: login não concluído. Rode o setup de novo.");
     return;
   }
 
   log.step("lexflow doctor...");
   await run([bin, "doctor"]);
 
-  await installWave();
+  // An old CLI may lack `lexflow refs`; its failure would read as "no access".
+  if (upToDate && uv && (await configureLexflowGit(bin, uv))) await installWave(uv);
 }
 
 function getInstaller(
@@ -265,6 +340,13 @@ async function main() {
     await lexflowAuth();
   }
 
+  if (pending.length > 0) {
+    console.log("");
+    console.log(`  ${B}Pendências${N}`);
+    for (const item of pending) log.warn(item);
+    console.log("");
+  }
+
   if (failed.length > 0 || verifyFailed.length > 0) {
     process.exit(1);
   }
@@ -281,7 +363,12 @@ async function main() {
     console.log(`${G}  Setup do Windows concluído!           ${N}`);
     console.log(`${G}========================================${N}`);
   } else {
-    console.log(`${G}  Setup concluído!                      ${N}`);
+    if (pending.length > 0) {
+      console.log(`${G}  Setup concluído com pendências        ${N}`);
+      console.log(`${G}  (veja a lista acima).                 ${N}`);
+    } else {
+      console.log(`${G}  Setup concluído!                      ${N}`);
+    }
     console.log(`${G}  Abra um novo terminal para aplicar.   ${N}`);
     console.log(`${G}========================================${N}`);
   }
